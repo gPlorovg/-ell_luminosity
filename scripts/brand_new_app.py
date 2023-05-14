@@ -8,6 +8,7 @@ class MyLabel(QWidget):
     def __init__(self, title, *args):
         super().__init__()
         layout = QHBoxLayout()
+        layout.setSpacing(6)
         title_label = QLabel(title)
         # title_label.setSizePolicy(QSizePolicy.Fixed)
         title_label.setStyleSheet(
@@ -37,6 +38,7 @@ class MyLabel(QWidget):
         )
         layout.addWidget(data_label)
         self.setLayout(layout)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
 
 class Toolbar(QWidget):
@@ -99,10 +101,13 @@ class Toolbar(QWidget):
         self.setFixedSize(QSize(84, 360))
 
 
-class Viewer(QWidget):
+class Viewer(QLabel):
     def __init__(self):
         super().__init__()
-
+        pixmap = QPixmap("../data/1.jpg")
+        self.setPixmap(pixmap)
+        self.setFixedSize(QSize(500, 500))
+        self.setAlignment(Qt.AlignCenter)
 
 class Slider(QSlider):
     def __init__(self):
@@ -113,6 +118,7 @@ class Slider(QSlider):
                 background-color: transparent;
             '''
         )
+
 
 
 class MyWindow(QMainWindow):
@@ -132,13 +138,14 @@ class MyWindow(QMainWindow):
         toolbar_layout.addWidget(toolbar)
 
         workspace_layout = QGridLayout()
+        workspace_layout.setSpacing(2)
         image_label = MyLabel("NAME", image_name)
         workspace_layout.addWidget(image_label, 0, 0)
         picture_viewer = Viewer()
-        workspace_layout.addWidget(picture_viewer, 1, 0, 1, 1)
+        workspace_layout.addWidget(picture_viewer, 1, 0, 2, 2)
         slider = Slider()
         workspace_layout.addWidget(slider, 3, 0)
-        frame_label = MyLabel("FRAME", current_frame, "/", max_frame)
+        frame_label = MyLabel("FRAME", current_frame, " / ", max_frame)
         workspace_layout.addWidget(frame_label, 3, 1)
 
         main_layout = QHBoxLayout()
@@ -151,6 +158,7 @@ class MyWindow(QMainWindow):
         main_widget.setLayout(main_layout)
         main_widget.setStyleSheet("background-color: white;")
         self.setCentralWidget(main_widget)
+
 
 
 if __name__ == '__main__':
