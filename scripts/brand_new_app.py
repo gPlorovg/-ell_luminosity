@@ -109,6 +109,7 @@ class Viewer(QLabel):
         self.setFixedSize(QSize(500, 500))
         self.setAlignment(Qt.AlignCenter)
 
+
 class Slider(QSlider):
     def __init__(self):
         super().__init__(Qt.Horizontal)
@@ -120,8 +121,34 @@ class Slider(QSlider):
         )
 
 
+class Graph(QLabel):
+    def __init__(self):
+        super().__init__()
+        pixmap = QPixmap("../data/1.jpg")
+        self.setPixmap(pixmap)
+        self.setFixedSize(QSize(500, 500))
+        self.setAlignment(Qt.AlignCenter)
 
-class MyWindow(QMainWindow):
+
+class Button(QPushButton):
+    def __init__(self, text, stylesheet):
+        super().__init__(text)
+        stylesheet += '''
+                border-radius: 10px;
+                padding: 10px;
+                min-height: 32px;
+                max-width: 250px;
+                
+                font-family: 'Inter';
+                font-style: normal;
+                font-weight: 700;
+                font-size: 16px;
+                line-height: 24px;
+        '''
+        self.setStyleSheet(stylesheet)
+
+
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         image_name = "Some image"
@@ -160,9 +187,40 @@ class MyWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
 
+class GraphWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        image_name = "Some image"
+        stylesheet_red = '''
+                color: white;
+                background-color: #F03C3C;
+        '''
+        stylesheet_grey = '''
+                color: #6A6E77;
+                background-color: #EBEEF5;
+        '''
+
+        main_layout = QGridLayout()
+        main_layout.setSpacing(16)
+        image_label = MyLabel("NAME", image_name)
+        main_layout.addWidget(image_label, 0, 0)
+
+        graph = Graph()
+        main_layout.addWidget(graph, 1, 0, 2, 2)
+
+        save_plot_button = Button("SAVE PLOT", stylesheet_red)
+        save_raw_button = Button("SAVE RAW DATA", stylesheet_grey)
+        main_layout.addWidget(save_plot_button, 3, 0)
+        main_layout.addWidget(save_raw_button, 3, 1)
+
+        main_widget = QWidget(self)
+        main_widget.setLayout(main_layout)
+        main_widget.setStyleSheet("background-color: white; padding: 16px;")
+        self.setCentralWidget(main_widget)
+
 
 if __name__ == '__main__':
     app = QApplication([])
-    window = MyWindow()
+    window = GraphWindow()
     window.show()
     app.exec_()
