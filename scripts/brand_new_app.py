@@ -31,7 +31,7 @@ class MyLabel(QWidget):
                 font-family: 'Inter';
                 font-style: normal;
                 font-weight: 400;
-                font-size: 16px;
+                font-size: 18px;
                 line-height: 24px;
                 color: #6A6E77;
             '''
@@ -142,7 +142,7 @@ class Button(QPushButton):
                 font-family: 'Inter';
                 font-style: normal;
                 font-weight: 700;
-                font-size: 16px;
+                font-size: 20px;
                 line-height: 24px;
         '''
         self.setStyleSheet(stylesheet)
@@ -200,22 +200,25 @@ class GraphWindow(QMainWindow):
                 background-color: #EBEEF5;
         '''
 
-        main_layout = QGridLayout()
-        main_layout.setSpacing(16)
+        main_layout = QVBoxLayout()
         image_label = MyLabel("NAME", image_name)
-        main_layout.addWidget(image_label, 0, 0)
+        main_layout.addWidget(image_label)
 
         graph = Graph()
-        main_layout.addWidget(graph, 1, 0, 2, 2)
+        main_layout.addWidget(graph)
 
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)
+        buttons_layout.setContentsMargins(46, 16, 46, 16)
         save_plot_button = Button("SAVE PLOT", stylesheet_red)
         save_raw_button = Button("SAVE RAW DATA", stylesheet_grey)
-        main_layout.addWidget(save_plot_button, 3, 0)
-        main_layout.addWidget(save_raw_button, 3, 1)
+        buttons_layout.addWidget(save_plot_button)
+        buttons_layout.addWidget(save_raw_button)
+        main_layout.addLayout(buttons_layout)
 
         main_widget = QWidget(self)
         main_widget.setLayout(main_layout)
-        main_widget.setStyleSheet("background-color: white; padding: 16px;")
+        main_widget.setStyleSheet("background-color: white;")
         self.setCentralWidget(main_widget)
 
 
