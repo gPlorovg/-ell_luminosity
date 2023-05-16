@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout,\
     QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy
-from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5.QtCore import Qt, QSize, QEvent, QMargins
+from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QDropEvent
+from PyQt5.QtCore import Qt, QSize, QEvent, QMargins, Qt, QUrl
 
 
 class MyLabel(QWidget):
@@ -101,13 +101,44 @@ class Toolbar(QWidget):
         self.setFixedSize(QSize(84, 360))
 
 
-class Viewer(QLabel):
+class Viewer(QWidget):
     def __init__(self):
         super().__init__()
         pixmap = QPixmap("../data/1.jpg")
-        self.setPixmap(pixmap)
-        self.setFixedSize(QSize(500, 500))
-        self.setAlignment(Qt.AlignCenter)
+        layout = QVBoxLayout()
+        label = QLabel()
+        label.setPixmap(pixmap)
+        label.setFixedSize(QSize(500, 500))
+        label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(label)
+        self.setLayout(layout)
+        self.image_paths = []
+        self.resize(400, 400)
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if event.mimeData().hasImage:
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        if event.mimeData().hasImage:
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        if event.mimeData().hasImage():
+            event.setDropAction(Qt.CopyAction)
+            self.image_paths.clear()
+
+            for url in event.mimeData().urls():
+                self.image_paths.append(url.toLocalFile())
+
+            event.accept()
+        else:
+            event.ignore()
 
 
 class Slider(QSlider):
@@ -224,6 +255,6 @@ class GraphWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication([])
-    window = GraphWindow()
+    window = MainWindow()
     window.show()
     app.exec_()
