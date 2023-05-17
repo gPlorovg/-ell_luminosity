@@ -103,8 +103,9 @@ class Toolbar(QWidget):
 
 
 class Viewer(QGraphicsView):
-    def __init__(self):
+    def __init__(self, set_slider_max):
         super().__init__()
+        self.set_slider_max = set_slider_max
         self.image_paths = []
         self.setAcceptDrops(True)
         self.zoom = 1
@@ -157,6 +158,7 @@ class Viewer(QGraphicsView):
             self.image_paths.append(self.image_paths.pop(0))
             self.show_image(0)
             event.accept()
+            self.set_slider_max(len(self.image_paths))
         else:
             event.ignore()
 
@@ -170,9 +172,9 @@ class Slider(QSlider):
                 background-color: transparent;
             '''
         )
-        self.setMinimum(0)
-        self.setMaximum(4)
-        self.setValue(0)
+        self.setMinimum(1)
+        self.setMaximum(1)
+        self.setValue(1)
 
 
 class Graph(QLabel):
@@ -209,6 +211,7 @@ class MainWindow(QMainWindow):
         self.current_frame = 0
         self.max_frame = 0
         self.image_paths = []
+        self.images_names = dict()
 
         with open("style.qss", "r") as f:
             stylesheet = f.read()
@@ -226,7 +229,7 @@ class MainWindow(QMainWindow):
         self.image_label.set_text(self.image_name)
         workspace_layout.addWidget(self.image_label, 0, 0)
 
-        self.picture_viewer = Viewer()
+        self.picture_viewer = Viewer(self.set_slider_max)
         workspace_layout.addWidget(self.picture_viewer, 1, 0, 2, 2)
 
         self.slider = Slider()
@@ -234,7 +237,7 @@ class MainWindow(QMainWindow):
         workspace_layout.addWidget(self.slider, 3, 0)
 
         self.frame_label = MyLabel("FRAME")
-        self.frame_label.set_text("0", " / ", "?")
+        self.frame_label.set_text("1", " / ", "?")
         workspace_layout.addWidget(self.frame_label, 3, 1)
 
         main_layout = QHBoxLayout()
@@ -250,8 +253,15 @@ class MainWindow(QMainWindow):
 
     def change_image(self, value):
         self.frame_label.set_text(str(value), " / ", str(self.slider.maximum()))
-        for i in self.picture_viewer.image_paths:
-            print(i)
+        if value not in self.images_names:
+            self.images_names[value] = self.picture_viewer.image_paths[value - 1]\
+                [self.picture_viewer.image_paths[value-1].rfind("/") + 1:]
+            self.image_label.set_text(self.images_names[value])
+        else:
+            self.image_label.set_text(self.images_names[value])
+
+    def set_slider_max(self, val):
+        self.slider.setMaximum(val)
 
 
 class GraphWindow(QMainWindow):
