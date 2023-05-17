@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout,\
     QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy,\
-    QGraphicsPixmapItem
+    QGraphicsPixmapItem, QGraphicsEllipseItem
 from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QDropEvent, QWheelEvent, QTransform
 from PyQt5.QtCore import Qt, QSize, QEvent, QMargins, Qt, QUrl
 
@@ -105,6 +105,12 @@ class Toolbar(QWidget):
 class Viewer(QGraphicsView):
     def __init__(self, set_slider_max):
         super().__init__()
+        self.z_order = 1
+        self.items_list = []
+        self._start = None
+        self._current_oval = None
+        self.draw_mode = False
+
         self.set_slider_max = set_slider_max
         self.image_paths = []
         self.setAcceptDrops(True)
@@ -124,6 +130,44 @@ class Viewer(QGraphicsView):
 
         # self.slider.valueChanged.connect(self.show_image)
 
+    def mousePressEvent(self, event):
+        if self.draw_mode:
+            if event.button() == Qt.LeftButton:
+                self._start = event.scenePos()
+
+    def mouseMoveEvent(self, event):
+        if self.draw_mode:
+            if event.buttons() & Qt.LeftButton:
+                if self._current_oval is not None:
+                    self.removeItem(self._current_oval)
+                end = event.scenePos()
+                x = min(self._start.x(), end.x())
+                y = min(self._start.y(), end.y())
+                r = max(abs(self._start.x() - end.x()), abs(self._start.y() - end.y()))
+                self._current_oval = QGraphicsEllipseItem(x, y, r, r)
+                if self._current_oval.zValue() < self.z_order:
+                    self._current_oval.setZValue(self.z_order)
+                self.addItem(self._current_oval)
+
+    def mouseReleaseEvent(self, event):
+        if self.draw_mode:
+            if event.button() == Qt.LeftButton:
+                if self._current_oval is not None:
+                    self.removeItem(self._current_oval)
+                end = event.scenePos()
+                x = min(self._start.x(), end.x())
+                y = min(self._start.y(), end.y())
+                r = max(abs(self._start.x() - end.x()), abs(self._start.y() - end.y()))
+                oval = QGraphicsEllipseItem(x, y, r, r)
+                oval.setZValue(self.z_order)
+                self.items_list.append(oval)
+                self.addItem(oval)
+                self.z_order += 1
+                self._start = None
+                self._current_oval = None
+            elif event.button() == Qt.RightButton:
+                self.removeItem(self.items_list.pop(-1))
+                self.z_order -= 1
     def wheelEvent(self, event: QWheelEvent) -> None:
         if event.angleDelta().y() > 0:
             self.zoom += 0.1
@@ -159,6 +203,7 @@ class Viewer(QGraphicsView):
             self.show_image(0)
             event.accept()
             self.set_slider_max(len(self.image_paths))
+            self.z_order = 1
         else:
             event.ignore()
 
@@ -253,12 +298,15 @@ class MainWindow(QMainWindow):
 
     def change_image(self, value):
         self.frame_label.set_text(str(value), " / ", str(self.slider.maximum()))
+
         if value not in self.images_names:
             self.images_names[value] = self.picture_viewer.image_paths[value - 1]\
                 [self.picture_viewer.image_paths[value-1].rfind("/") + 1:]
             self.image_label.set_text(self.images_names[value])
         else:
             self.image_label.set_text(self.images_names[value])
+
+        self.picture_viewer.show_image(value - 1)
 
     def set_slider_max(self, val):
         self.slider.setMaximum(val)
