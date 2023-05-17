@@ -6,12 +6,12 @@ from PyQt5.QtCore import Qt, QSize, QEvent, QMargins, Qt, QUrl
 
 
 class MyLabel(QWidget):
-    def __init__(self, title, *args):
+    def __init__(self, title):
         super().__init__()
-        layout = QHBoxLayout()
-        layout.setSpacing(6)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.layout = QHBoxLayout()
+        self.layout.setSpacing(6)
         title_label = QLabel(title)
-        # title_label.setSizePolicy(QSizePolicy.Fixed)
         title_label.setStyleSheet(
             '''
                 font-family: 'Inter';
@@ -22,12 +22,9 @@ class MyLabel(QWidget):
                 color: #6A6E77;
             '''
         )
-        layout.addWidget(title_label)
-
-        s = "".join([str(i) for i in args])
-        data_label = QLabel(s)
-        # data_label.setSizePolicy(QSizePolicy.Fixed)
-        data_label.setStyleSheet(
+        self.layout.addWidget(title_label)
+        self.data_label = QLabel()
+        self.data_label.setStyleSheet(
             '''
                 font-family: 'Inter';
                 font-style: normal;
@@ -37,9 +34,13 @@ class MyLabel(QWidget):
                 color: #6A6E77;
             '''
         )
-        layout.addWidget(data_label)
-        self.setLayout(layout)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.layout.addWidget(self.data_label)
+        self.setLayout(self.layout)
+
+    def set_text(self, *args):
+        s = "".join([str(i) for i in args])
+        self.data_label.setText(s)
+
 
 
 class Toolbar(QWidget):
@@ -205,7 +206,7 @@ class Button(QPushButton):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        image_name = "Some image"
+        self.image_name = "Some image"
         self.current_frame = 0
         self.max_frame = 0
         self.image_paths = []
@@ -222,7 +223,8 @@ class MainWindow(QMainWindow):
         workspace_layout = QGridLayout()
         workspace_layout.setSpacing(2)
 
-        self. image_label = MyLabel("NAME", image_name)
+        self. image_label = MyLabel("NAME")
+        self.image_label.set_text(self.image_name)
         workspace_layout.addWidget(self.image_label, 0, 0)
 
         self.picture_viewer = Viewer()
@@ -232,7 +234,8 @@ class MainWindow(QMainWindow):
         self.slider.valueChanged.connect(self.change_image)
         workspace_layout.addWidget(self.slider, 3, 0)
 
-        self.frame_label = MyLabel("FRAME", self.slider.value(), " / ", self.slider.maximum())
+        self.frame_label = MyLabel("FRAME")
+        self.frame_label.set_text("0", " / ", "?")
         workspace_layout.addWidget(self.frame_label, 3, 1)
 
         main_layout = QHBoxLayout()
@@ -246,8 +249,8 @@ class MainWindow(QMainWindow):
         main_widget.setStyleSheet("background-color: white;")
         self.setCentralWidget(main_widget)
 
-    # def change_image(self, value):
-    #     self.frame_label.change_text(str(self.slider.value()) + " / " + self.slider.maximum())
+    def change_image(self, value):
+        self.frame_label.set_text(str(value), " / ", str(self.slider.maximum()))
 
 class GraphWindow(QMainWindow):
     def __init__(self):
