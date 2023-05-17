@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout,\
-    QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy
-from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QDropEvent
+    QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy,\
+    QGraphicsPixmapItem
+from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QDropEvent, QWheelEvent, QTransform
 from PyQt5.QtCore import Qt, QSize, QEvent, QMargins, Qt, QUrl
 
 
@@ -101,20 +102,39 @@ class Toolbar(QWidget):
         self.setFixedSize(QSize(84, 360))
 
 
-class Viewer(QWidget):
+class Viewer(QGraphicsView):
     def __init__(self):
         super().__init__()
-        pixmap = QPixmap("../data/1.jpg")
-        layout = QVBoxLayout()
-        label = QLabel()
-        label.setPixmap(pixmap)
-        label.setFixedSize(QSize(500, 500))
-        label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(label)
-        self.setLayout(layout)
         self.image_paths = []
-        self.resize(400, 400)
         self.setAcceptDrops(True)
+        self.zoom = 1
+        self.setFixedSize(QSize(500, 500))
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.scene = QGraphicsScene()
+        self.setScene(self.scene)
+
+        self.image = QGraphicsPixmapItem(QPixmap("../data/1.jpg"))
+        self.scene.addItem(self.image)
+
+        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+
+        # self.slider.valueChanged.connect(self.show_image)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        if event.angleDelta().y() > 0:
+            self.zoom += 0.1
+        else:
+            self.zoom -= 0.1
+        self.scale(self.zoom, self.zoom)
+        self.zoom = 1
+
+    def show_image(self, value):
+        self.scene.removeItem(self.image)
+        self.image = QGraphicsPixmapItem(QPixmap(self.image_paths[value]))
+        self.scene.addItem(self.image)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasImage:
@@ -128,14 +148,14 @@ class Viewer(QWidget):
         else:
             event.ignore()
 
-    def dropEvent(self, event: QDropEvent) -> None:
-        if event.mimeData().hasImage():
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
             self.image_paths.clear()
 
             for url in event.mimeData().urls():
                 self.image_paths.append(url.toLocalFile())
-
+            self.show_image(0)
             event.accept()
         else:
             event.ignore()
@@ -150,6 +170,9 @@ class Slider(QSlider):
                 background-color: transparent;
             '''
         )
+        self.setMinimum(0)
+        self.setMaximum(4)
+        self.setValue(0)
 
 
 class Graph(QLabel):
@@ -183,8 +206,9 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         image_name = "Some image"
-        current_frame = 8
-        max_frame = 12
+        self.current_frame = 0
+        self.max_frame = 0
+        self.image_paths = []
 
         with open("style.qss", "r") as f:
             stylesheet = f.read()
@@ -197,14 +221,19 @@ class MainWindow(QMainWindow):
 
         workspace_layout = QGridLayout()
         workspace_layout.setSpacing(2)
-        image_label = MyLabel("NAME", image_name)
-        workspace_layout.addWidget(image_label, 0, 0)
-        picture_viewer = Viewer()
-        workspace_layout.addWidget(picture_viewer, 1, 0, 2, 2)
-        slider = Slider()
-        workspace_layout.addWidget(slider, 3, 0)
-        frame_label = MyLabel("FRAME", current_frame, " / ", max_frame)
-        workspace_layout.addWidget(frame_label, 3, 1)
+
+        self. image_label = MyLabel("NAME", image_name)
+        workspace_layout.addWidget(self.image_label, 0, 0)
+
+        self.picture_viewer = Viewer()
+        workspace_layout.addWidget(self.picture_viewer, 1, 0, 2, 2)
+
+        self.slider = Slider()
+        self.slider.valueChanged.connect(self.change_image)
+        workspace_layout.addWidget(self.slider, 3, 0)
+
+        self.frame_label = MyLabel("FRAME", self.slider.value(), " / ", self.slider.maximum())
+        workspace_layout.addWidget(self.frame_label, 3, 1)
 
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(QMargins(20, 20, 20, 20))
@@ -217,6 +246,8 @@ class MainWindow(QMainWindow):
         main_widget.setStyleSheet("background-color: white;")
         self.setCentralWidget(main_widget)
 
+    # def change_image(self, value):
+    #     self.frame_label.change_text(str(self.slider.value()) + " / " + self.slider.maximum())
 
 class GraphWindow(QMainWindow):
     def __init__(self):
