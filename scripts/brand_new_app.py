@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout,\
     QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy,\
     QGraphicsPixmapItem, QGraphicsEllipseItem
-from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QDropEvent, QWheelEvent, QTransform
+from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QDropEvent, QWheelEvent, QColor, QPen
 from PyQt5.QtCore import Qt, QSize, QEvent, QMargins, Qt, QUrl
 
 
@@ -102,33 +102,17 @@ class Toolbar(QWidget):
         self.setFixedSize(QSize(84, 360))
 
 
-class Viewer(QGraphicsView):
-    def __init__(self, set_slider_max):
+class Scene(QGraphicsScene):
+    def __init__(self):
         super().__init__()
+        self.pen = QPen(QColor("#F03C3C"), 4)
+        self.pen.setStyle(Qt.CustomDashLine)
+        self.pen.setDashPattern([3, 2])
         self.z_order = 1
         self.items_list = []
         self._start = None
         self._current_oval = None
-        self.draw_mode = False
-
-        self.set_slider_max = set_slider_max
-        self.image_paths = []
-        self.setAcceptDrops(True)
-        self.zoom = 1
-        self.setFixedSize(QSize(500, 500))
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-        self.scene = QGraphicsScene()
-        self.setScene(self.scene)
-
-        self.image = QGraphicsPixmapItem(QPixmap("../data/1.jpg"))
-        self.scene.addItem(self.image)
-
-        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
-
-        # self.slider.valueChanged.connect(self.show_image)
+        self.draw_mode = True
 
     def mousePressEvent(self, event):
         if self.draw_mode:
@@ -145,6 +129,7 @@ class Viewer(QGraphicsView):
                 y = min(self._start.y(), end.y())
                 r = max(abs(self._start.x() - end.x()), abs(self._start.y() - end.y()))
                 self._current_oval = QGraphicsEllipseItem(x, y, r, r)
+                self._current_oval.setPen(self.pen)
                 if self._current_oval.zValue() < self.z_order:
                     self._current_oval.setZValue(self.z_order)
                 self.addItem(self._current_oval)
@@ -159,6 +144,7 @@ class Viewer(QGraphicsView):
                 y = min(self._start.y(), end.y())
                 r = max(abs(self._start.x() - end.x()), abs(self._start.y() - end.y()))
                 oval = QGraphicsEllipseItem(x, y, r, r)
+                oval.setPen(self.pen)
                 oval.setZValue(self.z_order)
                 self.items_list.append(oval)
                 self.addItem(oval)
@@ -168,6 +154,28 @@ class Viewer(QGraphicsView):
             elif event.button() == Qt.RightButton:
                 self.removeItem(self.items_list.pop(-1))
                 self.z_order -= 1
+
+
+class Viewer(QGraphicsView):
+    def __init__(self, set_slider_max):
+        super().__init__()
+        self.set_slider_max = set_slider_max
+        self.image_paths = []
+        self.setAcceptDrops(True)
+        self.zoom = 1
+        self.setFixedSize(QSize(500, 500))
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        self.scene = Scene()
+        self.setScene(self.scene)
+
+        self.image = QGraphicsPixmapItem(QPixmap("../data/1.jpg"))
+        self.scene.addItem(self.image)
+
+        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+
     def wheelEvent(self, event: QWheelEvent) -> None:
         if event.angleDelta().y() > 0:
             self.zoom += 0.1
@@ -203,7 +211,7 @@ class Viewer(QGraphicsView):
             self.show_image(0)
             event.accept()
             self.set_slider_max(len(self.image_paths))
-            self.z_order = 1
+            self.scene.z_order = 1
         else:
             event.ignore()
 
