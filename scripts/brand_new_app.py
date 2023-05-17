@@ -42,7 +42,6 @@ class MyLabel(QWidget):
         self.data_label.setText(s)
 
 
-
 class Toolbar(QWidget):
     def __init__(self, stylesheet):
         super().__init__()
@@ -153,9 +152,9 @@ class Viewer(QGraphicsView):
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
             self.image_paths.clear()
-
             for url in event.mimeData().urls():
                 self.image_paths.append(url.toLocalFile())
+            self.image_paths.append(self.image_paths.pop(0))
             self.show_image(0)
             event.accept()
         else:
@@ -251,6 +250,9 @@ class MainWindow(QMainWindow):
 
     def change_image(self, value):
         self.frame_label.set_text(str(value), " / ", str(self.slider.maximum()))
+        for i in self.picture_viewer.image_paths:
+            print(i)
+
 
 class GraphWindow(QMainWindow):
     def __init__(self):
