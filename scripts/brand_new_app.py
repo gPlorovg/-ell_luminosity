@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout
     QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy,\
     QGraphicsPixmapItem, QGraphicsEllipseItem, QGraphicsTextItem
 from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QWheelEvent, QColor, QPen, QFont
-from PyQt5.QtCore import QSize, QMargins, Qt, QPointF, QEvent
+from PyQt5.QtCore import QSize, QMargins, Qt, QPointF, QEvent, pyqtSlot, pyqtSignal
 
 
 class MyLabel(QWidget):
@@ -43,6 +43,7 @@ class MyLabel(QWidget):
 
 
 class Toolbar(QWidget):
+    draw_mode = pyqtSignal(bool)
     def __init__(self, stylesheet):
         super().__init__()
         icon_size = QSize(32, 32)
@@ -73,7 +74,6 @@ class Toolbar(QWidget):
         # colorize_button.setObjectName("colorize_button")
         self.colorize_button.installEventFilter(self)
 
-
         self.shape_button = QPushButton()
         self.shape_button.setIcon(QIcon("../images/icons/light_theme/basic/shape.svg"))
         self.shape_button.setIconSize(icon_size)
@@ -84,7 +84,6 @@ class Toolbar(QWidget):
         self.shape_button.toggled.connect(self.turn_shape_mode)
         self.shape_button.installEventFilter(self)
 
-
         self.graph_button = QPushButton()
         self.graph_button.setIcon(QIcon("../images/icons/light_theme/basic/graph.svg"))
         self.graph_button.setIconSize(icon_size)
@@ -92,7 +91,6 @@ class Toolbar(QWidget):
         tools_layout.addWidget(self.graph_button)
         # graph_button.setObjectName("graph_button")
         self.graph_button.installEventFilter(self)
-
 
         self.setting_button = QPushButton()
         self.setting_button.setIcon(QIcon("../images/icons/light_theme/basic/settings.svg"))
@@ -102,7 +100,6 @@ class Toolbar(QWidget):
         button_group.addButton(self.setting_button)
         self.setting_button.setObjectName("setting_button")
         self.setting_button.installEventFilter(self)
-
 
         tool_bar_layout.addWidget(tools_widget)
         tool_bar_layout.addWidget(self.setting_button)
@@ -114,8 +111,10 @@ class Toolbar(QWidget):
     def turn_shape_mode(self, mode):
         if mode:
             self.shape_button.setIcon(QIcon("../images/icons/light_theme/chosen/shape.svg"))
+            self.draw_mode.emit(True)
         else:
             self.shape_button.setIcon(QIcon("../images/icons/light_theme/basic/shape.svg"))
+            self.draw_mode.emit(False)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.HoverEnter:
@@ -163,7 +162,7 @@ class Scene(QGraphicsScene):
         self.items_list = []
         self._start = None
         self._current_oval = None
-        self.draw_mode = True
+        self.draw_mode = False
 
     def mousePressEvent(self, event):
         if self.draw_mode:
@@ -223,7 +222,6 @@ class Viewer(QGraphicsView):
         super().__init__()
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-        # self.setDragMode(QGraphicsView.NoDrag)
         self.set_slider_max = set_slider_max
         self.image_paths = []
         self.setAcceptDrops(True)
@@ -334,13 +332,14 @@ class MainWindow(QMainWindow):
         toolbar_layout = QVBoxLayout()
         # toolbar_layout.setStretch(1)
         toolbar_layout.setSpacing(10)
-        toolbar = Toolbar(stylesheet)
-        toolbar_layout.addWidget(toolbar)
+        self.toolbar = Toolbar(stylesheet)
+        toolbar_layout.addWidget(self.toolbar)
+        self.toolbar.draw_mode.connect(self.turn_draw_mode)
 
         workspace_layout = QGridLayout()
         workspace_layout.setSpacing(2)
 
-        self. image_label = MyLabel("NAME")
+        self.image_label = MyLabel("NAME")
         self.image_label.set_text(self.image_name)
         workspace_layout.addWidget(self.image_label, 0, 0)
 
@@ -381,6 +380,14 @@ class MainWindow(QMainWindow):
     def set_slider_max(self, val):
         self.slider.setMaximum(val)
 
+    @pyqtSlot(bool)
+    def turn_draw_mode(self, checked):
+        if checked:
+            self.picture_viewer.scene.draw_mode = True
+            self.picture_viewer.setDragMode(QGraphicsView.NoDrag)
+        else:
+            self.picture_viewer.scene.draw_mode = False
+            self.picture_viewer.setDragMode(QGraphicsView.ScrollHandDrag)
 
 
 class GraphWindow(QMainWindow):
