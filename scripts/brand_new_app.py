@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout,\
     QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy,\
-    QGraphicsPixmapItem, QGraphicsEllipseItem
-from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QDropEvent, QWheelEvent, QColor, QPen
-from PyQt5.QtCore import Qt, QSize, QEvent, QMargins, Qt, QUrl
+    QGraphicsPixmapItem, QGraphicsEllipseItem, QGraphicsTextItem
+from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QWheelEvent, QColor, QPen, QFont
+from PyQt5.QtCore import QSize, QMargins, Qt, QPointF
 
 
 class MyLabel(QWidget):
@@ -146,19 +146,32 @@ class Scene(QGraphicsScene):
                 oval = QGraphicsEllipseItem(x, y, r, r)
                 oval.setPen(self.pen)
                 oval.setZValue(self.z_order)
-                self.items_list.append(oval)
                 self.addItem(oval)
+
+                center = oval.rect().center()
+                text_item = QGraphicsTextItem(str(self.z_order))
+                text_item.setFont(QFont("Inter", 10))
+                text_item.setDefaultTextColor(QColor("#F03C3C"))
+                text_item.setPos(center - QPointF(text_item.boundingRect().width() / 2,
+                                                  text_item.boundingRect().height() / 2))
+                self.addItem(text_item)
+
+                self.items_list.append((oval, text_item))
                 self.z_order += 1
                 self._start = None
                 self._current_oval = None
             elif event.button() == Qt.RightButton:
-                self.removeItem(self.items_list.pop(-1))
+                self.removeItem(self.items_list[-1][0])
+                self.removeItem(self.items_list[-1][1])
+                self.items_list.pop(-1)
                 self.z_order -= 1
 
 
 class Viewer(QGraphicsView):
     def __init__(self, set_slider_max):
         super().__init__()
+        # self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setDragMode(QGraphicsView.NoDrag)
         self.set_slider_max = set_slider_max
         self.image_paths = []
         self.setAcceptDrops(True)
