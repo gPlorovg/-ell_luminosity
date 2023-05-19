@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout
     QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy,\
     QGraphicsPixmapItem, QGraphicsEllipseItem, QGraphicsTextItem
 from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QWheelEvent, QColor, QPen, QFont
-from PyQt5.QtCore import QSize, QMargins, Qt, QPointF
+from PyQt5.QtCore import QSize, QMargins, Qt, QPointF, QEvent
 
 
 class MyLabel(QWidget):
@@ -57,49 +57,100 @@ class Toolbar(QWidget):
         button_group = QButtonGroup()
         # button_group.setExclusive(True)
 
-        save_button = QPushButton()
-        save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg"))
-        save_button.setIconSize(icon_size)
-        button_group.addButton(save_button)
-        tools_layout.addWidget(save_button)
-        save_button.setObjectName("save_button")
+        self.save_button = QPushButton()
+        self.save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg"))
+        self.save_button.setIconSize(icon_size)
+        button_group.addButton(self.save_button)
+        tools_layout.addWidget(self.save_button)
+        # self.save_button.setObjectName("save_button")
+        self.save_button.installEventFilter(self)
 
-        colorize_button = QPushButton()
-        colorize_button.setIcon(QIcon("../images/icons/light_theme/basic/colorize.svg"))
-        colorize_button.setIconSize(icon_size)
-        button_group.addButton(colorize_button)
-        tools_layout.addWidget(colorize_button)
+        self.colorize_button = QPushButton()
+        self.colorize_button.setIcon(QIcon("../images/icons/light_theme/basic/colorize.svg"))
+        self.colorize_button.setIconSize(icon_size)
+        button_group.addButton(self.colorize_button)
+        tools_layout.addWidget(self.colorize_button)
         # colorize_button.setObjectName("colorize_button")
+        self.colorize_button.installEventFilter(self)
 
-        shape_button = QPushButton()
-        shape_button.setIcon(QIcon("../images/icons/light_theme/basic/shape.svg"))
-        shape_button.setIconSize(icon_size)
-        save_button.setCheckable(True)
-        button_group.addButton(shape_button)
-        tools_layout.addWidget(shape_button)
+
+        self.shape_button = QPushButton()
+        self.shape_button.setIcon(QIcon("../images/icons/light_theme/basic/shape.svg"))
+        self.shape_button.setIconSize(icon_size)
+        self.shape_button.setCheckable(True)
+        button_group.addButton(self.shape_button)
+        tools_layout.addWidget(self.shape_button)
         # shape_button.setObjectName("shape_button")
+        self.shape_button.toggled.connect(self.turn_shape_mode)
+        self.shape_button.installEventFilter(self)
 
-        graph_button = QPushButton()
-        graph_button.setIcon(QIcon("../images/icons/light_theme/basic/graph.svg"))
-        graph_button.setIconSize(icon_size)
-        button_group.addButton(graph_button)
-        tools_layout.addWidget(graph_button)
+
+        self.graph_button = QPushButton()
+        self.graph_button.setIcon(QIcon("../images/icons/light_theme/basic/graph.svg"))
+        self.graph_button.setIconSize(icon_size)
+        button_group.addButton(self.graph_button)
+        tools_layout.addWidget(self.graph_button)
         # graph_button.setObjectName("graph_button")
+        self.graph_button.installEventFilter(self)
 
-        setting_button = QPushButton()
-        setting_button.setIcon(QIcon("../images/icons/light_theme/basic/settings.svg"))
-        setting_button.setIconSize(icon_size)
+
+        self.setting_button = QPushButton()
+        self.setting_button.setIcon(QIcon("../images/icons/light_theme/basic/settings.svg"))
+        self.setting_button.setIconSize(icon_size)
         # setting_button.setSizePolicy(QSizePolicy.Fixed)
         # setting_button.setFixedSize(self.setting_button_size)
-        button_group.addButton(setting_button)
-        setting_button.setObjectName("setting_button")
+        button_group.addButton(self.setting_button)
+        self.setting_button.setObjectName("setting_button")
+        self.setting_button.installEventFilter(self)
+
 
         tool_bar_layout.addWidget(tools_widget)
-        tool_bar_layout.addWidget(setting_button)
+        tool_bar_layout.addWidget(self.setting_button)
         tools_layout.setSpacing(10)
         self.setLayout(tool_bar_layout)
         self.setStyleSheet(stylesheet)
         self.setFixedSize(QSize(84, 360))
+
+    def turn_shape_mode(self, mode):
+        if mode:
+            self.shape_button.setIcon(QIcon("../images/icons/light_theme/chosen/shape.svg"))
+        else:
+            self.shape_button.setIcon(QIcon("../images/icons/light_theme/basic/shape.svg"))
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.HoverEnter:
+            if obj == self.save_button:
+                self.save_button.setIcon(QIcon("../images/icons/light_theme/chosen/save.svg"))
+                return True
+            if obj == self.colorize_button:
+                self.colorize_button.setIcon(QIcon("../images/icons/light_theme/chosen/colorize.svg"))
+                return True
+            if obj == self.shape_button and not self.shape_button.isChecked():
+                self.shape_button.setIcon(QIcon("../images/icons/light_theme/chosen/shape.svg"))
+                return True
+            if obj == self.graph_button:
+                self.graph_button.setIcon(QIcon("../images/icons/light_theme/chosen/graph.svg"))
+                return True
+            if obj == self.setting_button:
+                self.setting_button.setIcon(QIcon("../images/icons/light_theme/chosen/settings.svg"))
+                return True
+        elif event.type() == QEvent.HoverLeave:
+            if obj == self.save_button:
+                self.save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg"))
+                return True
+            if obj == self.colorize_button:
+                self.colorize_button.setIcon(QIcon("../images/icons/light_theme/basic/colorize.svg"))
+                return True
+            if obj == self.shape_button and not self.shape_button.isChecked():
+                self.shape_button.setIcon(QIcon("../images/icons/light_theme/basic/shape.svg"))
+                return True
+            if obj == self.graph_button:
+                self.graph_button.setIcon(QIcon("../images/icons/light_theme/basic/graph.svg"))
+                return True
+            if obj == self.setting_button:
+                self.setting_button.setIcon(QIcon("../images/icons/light_theme/basic/settings.svg"))
+                return True
+        return super().eventFilter(obj, event)
 
 
 class Scene(QGraphicsScene):
@@ -170,8 +221,9 @@ class Scene(QGraphicsScene):
 class Viewer(QGraphicsView):
     def __init__(self, set_slider_max):
         super().__init__()
-        # self.setDragMode(QGraphicsView.ScrollHandDrag)
-        self.setDragMode(QGraphicsView.NoDrag)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        # self.setDragMode(QGraphicsView.NoDrag)
         self.set_slider_max = set_slider_max
         self.image_paths = []
         self.setAcceptDrops(True)
@@ -185,9 +237,6 @@ class Viewer(QGraphicsView):
 
         self.image = QGraphicsPixmapItem(QPixmap("../data/1.jpg"))
         self.scene.addItem(self.image)
-
-        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         if event.angleDelta().y() > 0:
@@ -331,6 +380,7 @@ class MainWindow(QMainWindow):
 
     def set_slider_max(self, val):
         self.slider.setMaximum(val)
+
 
 
 class GraphWindow(QMainWindow):
