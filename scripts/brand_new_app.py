@@ -193,6 +193,7 @@ class Scene(QGraphicsScene):
                 x = min(self._start.x(), end.x())
                 y = min(self._start.y(), end.y())
                 r = max(abs(self._start.x() - end.x()), abs(self._start.y() - end.y()))
+                print(x, y, r)
                 oval = QGraphicsEllipseItem(x, y, r, r)
                 oval.setPen(self.pen)
                 oval.setZValue(self.z_order)
@@ -206,7 +207,7 @@ class Scene(QGraphicsScene):
                                                   text_item.boundingRect().height() / 2))
                 self.addItem(text_item)
 
-                self.items_list.append((oval, text_item))
+                self.items_list.append((oval, text_item, (round(center.x()), round(center.y()), round(r))))
                 self.z_order += 1
                 self._start = None
                 self._current_oval = None
