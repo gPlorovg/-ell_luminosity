@@ -1,8 +1,11 @@
+import numpy as np
 from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout,\
     QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy,\
-    QGraphicsPixmapItem, QGraphicsEllipseItem, QGraphicsTextItem
+    QGraphicsPixmapItem, QGraphicsEllipseItem, QGraphicsTextItem, QFileDialog, QMessageBox
 from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QWheelEvent, QColor, QPen, QFont
 from PyQt5.QtCore import QSize, QMargins, Qt, QPointF, QEvent, pyqtSlot, pyqtSignal
+import proceccing
+import csv, shutil
 
 
 class MyLabel(QWidget):
@@ -193,7 +196,6 @@ class Scene(QGraphicsScene):
                 x = min(self._start.x(), end.x())
                 y = min(self._start.y(), end.y())
                 r = max(abs(self._start.x() - end.x()), abs(self._start.y() - end.y()))
-                print(x, y, r)
                 oval = QGraphicsEllipseItem(x, y, r, r)
                 oval.setPen(self.pen)
                 oval.setZValue(self.z_order)
@@ -294,8 +296,7 @@ class Slider(QSlider):
 class Graph(QLabel):
     def __init__(self):
         super().__init__()
-        pixmap = QPixmap("../data/1.jpg")
-        self.setPixmap(pixmap)
+        self.setPixmap(QPixmap("../images/cat.jpg"))
         self.setFixedSize(QSize(500, 500))
         self.setAlignment(Qt.AlignCenter)
 
@@ -303,12 +304,15 @@ class Graph(QLabel):
 class Button(QPushButton):
     def __init__(self, text, stylesheet):
         super().__init__(text)
+        self.set_style(stylesheet)
+
+    def set_style(self, stylesheet):
         stylesheet += '''
                 border-radius: 10px;
                 padding: 10px;
                 min-height: 32px;
                 max-width: 250px;
-                
+
                 font-family: 'Inter';
                 font-style: normal;
                 font-weight: 700;
@@ -318,14 +322,94 @@ class Button(QPushButton):
         self.setStyleSheet(stylesheet)
 
 
+class GraphWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.data = list()
+        self.stylesheet_red = '''
+                color: white;
+                background-color: #F03C3C;
+        '''
+        self.stylesheet_grey = '''
+                color: #6A6E77;
+                background-color: #EBEEF5;
+        '''
+
+        main_layout = QVBoxLayout()
+        self.image_label = MyLabel("NAME")
+        self.image_label.set_text("Some image")
+        main_layout.addWidget(self.image_label)
+
+        self.graph = Graph()
+        main_layout.addWidget(self.graph)
+
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(10)
+        buttons_layout.setContentsMargins(46, 16, 46, 16)
+
+        self.save_plot_button = Button("SAVE PLOT", self.stylesheet_red)
+        self.save_plot_button.clicked.connect(self.save_graph)
+        self.save_plot_button.installEventFilter(self)
+
+        self.save_raw_button = Button("SAVE RAW DATA", self.stylesheet_grey)
+        self.save_raw_button.clicked.connect(self.save_raw)
+        self.save_raw_button.installEventFilter(self)
+
+        buttons_layout.addWidget(self.save_plot_button)
+        buttons_layout.addWidget(self.save_raw_button)
+        main_layout.addLayout(buttons_layout)
+
+        main_widget = QWidget(self)
+        main_widget.setLayout(main_layout)
+        main_widget.setStyleSheet("background-color: white;")
+        self.setCentralWidget(main_widget)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.HoverEnter:
+            if obj == self.save_plot_button:
+                self.save_plot_button.set_style("color: #F03C3C;background-color: white;border-width: 10px;\
+                                                border-color: #F03C3C;")
+                return True
+            if obj == self.save_raw_button:
+                self.save_raw_button.set_style("color: #EBEEF5;background-color: #6A6E77;")
+                return True
+        elif event.type() == QEvent.HoverLeave:
+            if obj == self.save_plot_button:
+                self.save_plot_button.set_style("color: white;background-color: #F03C3C;")
+                return True
+            if obj == self.save_raw_button:
+                self.save_raw_button.set_style("color: #6A6E77;background-color: #EBEEF5;")
+                return True
+        return super().eventFilter(obj, event)
+
+    def save_graph(self):
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;Image Files (*.png)',
+                                                   options=options)
+        if file_name:
+            shutil.copy("../graphics/Example.png", file_name)
+            # QMessageBox.information(self, 'File Saved', 'File saved successfully!')
+
+    def save_raw(self):
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;CSV Files (*.csv)',
+                                                   options=options)
+        if file_name:
+            with open(file_name, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerows(self.data)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.image_name = "Some image"
         self.current_frame = 0
         self.max_frame = 0
-        self.image_paths = []
         self.images_names = dict()
+        self.graph_window = GraphWindow()
+        self.roi = list()
+        self.frame_data = list()
 
         with open("style.qss", "r") as f:
             stylesheet = f.read()
@@ -336,6 +420,7 @@ class MainWindow(QMainWindow):
         self.toolbar = Toolbar(stylesheet)
         toolbar_layout.addWidget(self.toolbar)
         self.toolbar.draw_mode.connect(self.turn_draw_mode)
+        self.toolbar.graph_button.clicked.connect(self.calculate)
 
         workspace_layout = QGridLayout()
         workspace_layout.setSpacing(2)
@@ -380,6 +465,10 @@ class MainWindow(QMainWindow):
 
     def set_slider_max(self, val):
         self.slider.setMaximum(val)
+        self.frame_label.set_text(str(self.slider.minimum()), " / ", str(self.slider.maximum()))
+    # Sorry fot this
+        self.images_names[1] = self.picture_viewer.image_paths[0][self.picture_viewer.image_paths[0].rfind("/") + 1:]
+        self.image_label.set_text(self.images_names[1])
 
     @pyqtSlot(bool)
     def turn_draw_mode(self, checked):
@@ -390,40 +479,23 @@ class MainWindow(QMainWindow):
             self.picture_viewer.scene.draw_mode = False
             self.picture_viewer.setDragMode(QGraphicsView.ScrollHandDrag)
 
+    def calculate(self):
+        self.roi = [proceccing.ROI(*el[2]) for el in self.picture_viewer.scene.items_list]
+        self.frame_data = []
 
-class GraphWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        image_name = "Some image"
-        stylesheet_red = '''
-                color: white;
-                background-color: #F03C3C;
-        '''
-        stylesheet_grey = '''
-                color: #6A6E77;
-                background-color: #EBEEF5;
-        '''
+        for url in self.picture_viewer.image_paths:
+            self.frame_data.append([roi.measure(proceccing.open_image(url)) for roi in self.roi])
 
-        main_layout = QVBoxLayout()
-        image_label = MyLabel("NAME", image_name)
-        main_layout.addWidget(image_label)
-
-        graph = Graph()
-        main_layout.addWidget(graph)
-
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(10)
-        buttons_layout.setContentsMargins(46, 16, 46, 16)
-        save_plot_button = Button("SAVE PLOT", stylesheet_red)
-        save_raw_button = Button("SAVE RAW DATA", stylesheet_grey)
-        buttons_layout.addWidget(save_plot_button)
-        buttons_layout.addWidget(save_raw_button)
-        main_layout.addLayout(buttons_layout)
-
-        main_widget = QWidget(self)
-        main_widget.setLayout(main_layout)
-        main_widget.setStyleSheet("background-color: white;")
-        self.setCentralWidget(main_widget)
+        self.graph_window.graph.setPixmap(QPixmap(proceccing.make_graph(self.frame_data, "Example")))
+        self.graph_window.data = self.frame_data
+        self.graph_window.image_label.set_text(self.images_names[1])
+        self.graph_window.show()
+        # frame_data
+        #     roi1 roi2   roi3   roi4
+        # fr1[0.0, 138.0, 130.0, 111.0]
+        # fr2[0.0, 17.0, 16.0, 14.0]
+        # fr3[0.0, 24.0, 21.0, 15.0]
+        # fr4[0.0, 74.0, 70.0, 59.0]
 
 
 if __name__ == '__main__':
