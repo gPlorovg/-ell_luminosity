@@ -252,10 +252,15 @@ class Viewer(QGraphicsView):
         self.scale(self.zoom, self.zoom)
         self.zoom = 1
 
-    def show_image(self, value):
-        self.scene.removeItem(self.image)
-        self.image = QGraphicsPixmapItem(QPixmap(self.image_paths[value]))
-        self.scene.addItem(self.image)
+    def show_image(self, value=0, pixmap=None):
+        if pixmap is None:
+            self.scene.removeItem(self.image)
+            self.image = QGraphicsPixmapItem(QPixmap(self.image_paths[value]))
+            self.scene.addItem(self.image)
+        else:
+            self.scene.removeItem(self.image)
+            self.image = QGraphicsPixmapItem(pixmap)
+            self.scene.addItem(self.image)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasImage:
@@ -452,6 +457,8 @@ class MainWindow(QMainWindow):
         self.save_menu.save_current_frame.triggered.connect(self.save_cur_frame)
         self.toolbar.save_button.setMenu(self.save_menu)
 
+        self.toolbar.colorize_button.clicked.connect(self.colorize_cur_frame)
+
         workspace_layout = QGridLayout()
         workspace_layout.setSpacing(2)
 
@@ -557,6 +564,10 @@ class MainWindow(QMainWindow):
                                                    options=options)
         if file_name:
             self.picture_viewer.image.pixmap().save(file_name)
+
+    def colorize_cur_frame(self):
+        colorized_pixmap = proceccing.colorize(self.picture_viewer.image.pixmap(), "magma")
+        self.picture_viewer.show_image(pixmap=colorized_pixmap)
 
 if __name__ == '__main__':
     app = QApplication([])

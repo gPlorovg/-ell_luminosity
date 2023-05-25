@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+from PyQt5.QtGui import QImage, QPixmap
 
 
 class ROI:
@@ -14,7 +15,7 @@ class ROI:
         mask = (xs - self.x) ** 2 + (ys - self.y) ** 2 <= self.r ** 2
         return np.median(img[mask])
 
-    def get_info(self):
+    def get_info(self) -> list:
         return [self.x, self.y, self.r]
 
 
@@ -22,7 +23,7 @@ def open_image(url):
     return np.array(Image.open(url).convert('L'))
 
 
-def make_graph(data, name):
+def make_graph(data, name) -> str:
     fig, ax = plt.subplots(figsize=(5, 5))
 
     for i, col in enumerate(zip(*data)):
@@ -40,6 +41,25 @@ def make_graph(data, name):
     url = f"../graphics/{name}.png"
     plt.savefig(url, dpi=100)
     return url
+
+
+def colorize(pixmap, cmap) -> QPixmap:
+    pil_image = Image.fromqimage(pixmap.toImage())
+    img_array = np.array(pil_image.convert('L'))
+
+    color_map = plt.get_cmap(cmap)
+    colorized_array = color_map(img_array)
+
+    # Scale array values to 0-255 and convert to uint8
+    colorized_array = (colorized_array * 255).astype(np.uint8)
+
+    # Create PIL Image from numpy array
+    colorized_img = Image.fromarray(colorized_array)
+
+    image_data = colorized_img.convert("RGBA").tobytes()
+    qimage = QImage(image_data, colorized_img.size[0], colorized_img.size[1], QImage.Format_RGBA8888)
+
+    return QPixmap.fromImage(qimage)
 
 # image = np.random.randint(0, 256, size=144).reshape(-1, 12)
 # roi = ROI(5, 5, 3)
