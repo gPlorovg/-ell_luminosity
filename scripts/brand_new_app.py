@@ -295,7 +295,23 @@ class Slider(QSlider):
         # self.setSizePolicy(QSizePolicy.Fixed)
         self.setStyleSheet(
             '''
-                background-color: transparent;
+            QSlider::groove:horizontal {
+                background: #6A6E77;
+                height: 8px;
+                border-radius: 4px;
+            }
+            QSlider::sub-page:horizontal {
+                background: #F03C3C;
+                height: 8px;
+                border-radius: 4px;
+            }
+            
+            QSlider::handle:horizontal {
+                background: #F03C3C;
+                width: 18px;
+                margin: -5px 0;
+                border-radius: 9px;
+            }
             '''
         )
         self.setMinimum(1)
