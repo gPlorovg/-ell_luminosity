@@ -197,21 +197,8 @@ class Scene(QGraphicsScene):
                 x = min(self._start.x(), end.x())
                 y = min(self._start.y(), end.y())
                 r = max(abs(self._start.x() - end.x()), abs(self._start.y() - end.y()))
-                oval = QGraphicsEllipseItem(x, y, r, r)
-                oval.setPen(self.pen)
-                oval.setZValue(self.z_order)
-                self.addItem(oval)
+                self.add_oval(x, y, r)
 
-                center = oval.rect().center()
-                text_item = QGraphicsTextItem(str(self.z_order))
-                text_item.setFont(QFont("Inter", 10))
-                text_item.setDefaultTextColor(QColor("#F03C3C"))
-                text_item.setPos(center - QPointF(text_item.boundingRect().width() / 2,
-                                                  text_item.boundingRect().height() / 2))
-                self.addItem(text_item)
-
-                self.items_list.append((oval, text_item, (round(center.x()), round(center.y()), round(r))))
-                self.z_order += 1
                 self._start = None
                 self._current_oval = None
             elif event.button() == Qt.RightButton:
@@ -219,6 +206,23 @@ class Scene(QGraphicsScene):
                 self.removeItem(self.items_list[-1][1])
                 self.items_list.pop(-1)
                 self.z_order -= 1
+
+    def add_oval(self, x, y, r):
+        oval = QGraphicsEllipseItem(x, y, r, r)
+        oval.setPen(self.pen)
+        oval.setZValue(self.z_order)
+        self.addItem(oval)
+
+        center = oval.rect().center()
+        text_item = QGraphicsTextItem(str(self.z_order))
+        text_item.setFont(QFont("Inter", 10))
+        text_item.setDefaultTextColor(QColor("#F03C3C"))
+        text_item.setPos(center - QPointF(text_item.boundingRect().width() / 2,
+                                          text_item.boundingRect().height() / 2))
+        self.addItem(text_item)
+
+        self.items_list.append((oval, text_item, (round(center.x()), round(center.y()), round(r))))
+        self.z_order += 1
 
 
 class Viewer(QGraphicsView):
@@ -444,6 +448,7 @@ class MainWindow(QMainWindow):
         self.save_menu.save_graph.triggered.connect(self.graph_window.save_graph)
         self.save_menu.save_raw_data.triggered.connect(self.graph_window.save_raw)
         self.save_menu.save_roi.triggered.connect(self.save_roi)
+        self.save_menu.open_roi.triggered.connect(self.open_roi)
         self.toolbar.save_button.setMenu(self.save_menu)
 
         workspace_layout = QGridLayout()
@@ -531,8 +536,19 @@ class MainWindow(QMainWindow):
                 writer = csv.writer(f)
                 writer.writerow(["", "X", "Y", "R"])
                 writer.writerows([[f"Region {i+1}", *roi.get_info()] for i, roi in enumerate(self.roi)])
-                # data = [[f"Region {i+1}"].append(roi.get_info()) for i, roi in enumerate(self.roi)]
-                # writer.writerows(data)
+
+    def open_roi(self):
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getOpenFileName(self, "Open File")
+        if file_path:
+            with open(file_path, 'r') as file:
+                reader = csv.reader(file)
+                _ = next(reader)  # Read the header row
+                data = []
+                for row in reader:
+                    data.append(list(map(lambda el: int(el), row[1:])))
+            for roi in data:
+                self.picture_viewer.scene.add_oval(*roi)
 
 if __name__ == '__main__':
     app = QApplication([])
