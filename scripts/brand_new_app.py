@@ -1,11 +1,12 @@
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QMainWindow, QButtonGroup, QVBoxLayout,\
     QSlider, QLabel, QPushButton, QHBoxLayout, QWidget, QGraphicsView, QGraphicsScene, QGridLayout, QSizePolicy,\
-    QGraphicsPixmapItem, QGraphicsEllipseItem, QGraphicsTextItem, QFileDialog, QMessageBox
+    QGraphicsPixmapItem, QGraphicsEllipseItem, QGraphicsTextItem, QFileDialog, QMenu, QAction
 from PyQt5.QtGui import QIcon, QPixmap, QDragEnterEvent, QDragMoveEvent, QWheelEvent, QColor, QPen, QFont
 from PyQt5.QtCore import QSize, QMargins, Qt, QPointF, QEvent, pyqtSlot, pyqtSignal
 import proceccing
-import csv, shutil
+import csv
+import shutil
 
 
 class MyLabel(QWidget):
@@ -397,7 +398,24 @@ class GraphWindow(QMainWindow):
         if file_name:
             with open(file_name, "w", newline="") as f:
                 writer = csv.writer(f)
+                writer.writerow([f"Region {i+1}" for i in range(len(self.data[0]))])
                 writer.writerows(self.data)
+
+
+class SaveMenu(QMenu):
+    def __init__(self):
+        super().__init__()
+        self.save_roi = QAction("Save regions of interest", self)
+        self.open_roi = QAction("Open regions of interest", self)
+        self.save_colorized_frame = QAction("Save colorized picture", self)
+        self.save_graph = QAction("Save plot", self)
+        self.save_raw_data = QAction("Save raw data", self)
+
+        self.addAction(self.save_roi)
+        self.addAction(self.open_roi)
+        self.addAction(self.save_colorized_frame)
+        self.addAction(self.save_graph)
+        self.addAction(self.save_raw_data)
 
 
 class MainWindow(QMainWindow):
@@ -421,6 +439,12 @@ class MainWindow(QMainWindow):
         toolbar_layout.addWidget(self.toolbar)
         self.toolbar.draw_mode.connect(self.turn_draw_mode)
         self.toolbar.graph_button.clicked.connect(self.calculate)
+
+        self.save_menu = SaveMenu()
+        self.save_menu.save_graph.triggered.connect(self.graph_window.save_graph)
+        self.save_menu.save_raw_data.triggered.connect(self.graph_window.save_raw)
+        self.save_menu.save_roi.triggered.connect(self.save_roi)
+        self.toolbar.save_button.setMenu(self.save_menu)
 
         workspace_layout = QGridLayout()
         workspace_layout.setSpacing(2)
@@ -497,6 +521,18 @@ class MainWindow(QMainWindow):
         # fr3[0.0, 24.0, 21.0, 15.0]
         # fr4[0.0, 74.0, 70.0, 59.0]
 
+    def save_roi(self):
+        self.roi = [proceccing.ROI(*el[2]) for el in self.picture_viewer.scene.items_list]
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;CSV Files (*.csv)',
+                                                   options=options)
+        if file_name:
+            with open(file_name, "w", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["", "X", "Y", "R"])
+                writer.writerows([[f"Region {i+1}", *roi.get_info()] for i, roi in enumerate(self.roi)])
+                # data = [[f"Region {i+1}"].append(roi.get_info()) for i, roi in enumerate(self.roi)]
+                # writer.writerows(data)
 
 if __name__ == '__main__':
     app = QApplication([])
