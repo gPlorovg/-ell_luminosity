@@ -411,13 +411,13 @@ class SaveMenu(QMenu):
         super().__init__()
         self.save_roi = QAction("Save regions of interest", self)
         self.open_roi = QAction("Open regions of interest", self)
-        self.save_colorized_frame = QAction("Save colorized picture", self)
+        self.save_current_frame = QAction("Save current frame", self)
         self.save_graph = QAction("Save plot", self)
         self.save_raw_data = QAction("Save raw data", self)
 
         self.addAction(self.save_roi)
         self.addAction(self.open_roi)
-        self.addAction(self.save_colorized_frame)
+        self.addAction(self.save_current_frame)
         self.addAction(self.save_graph)
         self.addAction(self.save_raw_data)
 
@@ -449,6 +449,7 @@ class MainWindow(QMainWindow):
         self.save_menu.save_raw_data.triggered.connect(self.graph_window.save_raw)
         self.save_menu.save_roi.triggered.connect(self.save_roi)
         self.save_menu.open_roi.triggered.connect(self.open_roi)
+        self.save_menu.save_current_frame.triggered.connect(self.save_cur_frame)
         self.toolbar.save_button.setMenu(self.save_menu)
 
         workspace_layout = QGridLayout()
@@ -549,6 +550,13 @@ class MainWindow(QMainWindow):
                     data.append(list(map(lambda el: int(el), row[1:])))
             for roi in data:
                 self.picture_viewer.scene.add_oval(*roi)
+
+    def save_cur_frame(self):
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;Image Files (*.png)',
+                                                   options=options)
+        if file_name:
+            self.picture_viewer.image.pixmap().save(file_name)
 
 if __name__ == '__main__':
     app = QApplication([])
