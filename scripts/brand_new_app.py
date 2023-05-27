@@ -202,10 +202,11 @@ class Scene(QGraphicsScene):
                 self._start = None
                 self._current_oval = None
             elif event.button() == Qt.RightButton:
-                self.removeItem(self.items_list[-1][0])
-                self.removeItem(self.items_list[-1][1])
-                self.items_list.pop(-1)
-                self.z_order -= 1
+                if self.items_list:
+                    self.removeItem(self.items_list[-1][0])
+                    self.removeItem(self.items_list[-1][1])
+                    self.items_list.pop(-1)
+                    self.z_order -= 1
 
     def add_oval(self, x, y, r):
         oval = QGraphicsEllipseItem(x, y, r, r)
