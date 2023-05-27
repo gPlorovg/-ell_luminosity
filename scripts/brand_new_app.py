@@ -54,10 +54,11 @@ class Toolbar(QWidget):
         icon_size = QSize(32, 32)
         tool_bar_layout = QVBoxLayout()
 
-        tools_widget = QWidget()
+        self.tools_widget = QWidget()
         tools_layout = QVBoxLayout()
-        tools_widget.setLayout(tools_layout)
-        tools_widget.setObjectName("tools_widget")
+        self.tools_widget.setLayout(tools_layout)
+        self.tools_widget.setObjectName("tools_widget")
+        self.tools_widget.setEnabled(False)
         # tools_widget.setSizePolicy(QSizePolicy.Fixed)
 
         button_group = QButtonGroup()
@@ -106,7 +107,7 @@ class Toolbar(QWidget):
         self.setting_button.setObjectName("setting_button")
         self.setting_button.installEventFilter(self)
 
-        tool_bar_layout.addWidget(tools_widget)
+        tool_bar_layout.addWidget(self.tools_widget)
         tool_bar_layout.addWidget(self.setting_button)
         tools_layout.setSpacing(10)
         self.setLayout(tool_bar_layout)
@@ -229,11 +230,12 @@ class Scene(QGraphicsScene):
 
 
 class Viewer(QGraphicsView):
-    def __init__(self, set_slider_max):
+    add_pictures = pyqtSignal(int)
+
+    def __init__(self):
         super().__init__()
         self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
-        self.set_slider_max = set_slider_max
         self.image_paths = []
         self.setAcceptDrops(True)
         self.zoom = 1
@@ -245,7 +247,7 @@ class Viewer(QGraphicsView):
         self.scene = Scene()
         self.setScene(self.scene)
 
-        self.image = QGraphicsPixmapItem(QPixmap("../data/1.jpg"))
+        self.image = QGraphicsPixmapItem(QPixmap("../images/default_image.png"))
         self.image_view_size = self.image.pixmap().size()
         self.scene.addItem(self.image)
 
@@ -294,10 +296,12 @@ class Viewer(QGraphicsView):
             for url in event.mimeData().urls():
                 self.image_paths.append(url.toLocalFile())
             self.image_paths.append(self.image_paths.pop(0))
+            self.image_view_size = QPixmap(self.image_paths[0]).size()
+            print(self.image_view_size)
             self.show_image(0)
-            event.accept()
-            self.set_slider_max(len(self.image_paths))
             self.scene.z_order = 1
+            self.add_pictures.emit(len(self.image_paths))
+            event.accept()
         else:
             event.ignore()
 
@@ -460,6 +464,7 @@ class SaveMenu(QMenu):
     def leaveEvent(self, event) -> None:
         self.leave.emit()
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -487,8 +492,6 @@ class MainWindow(QMainWindow):
         self.save_menu = SaveMenu()
         self.save_menu.leave.connect(
             lambda: self.toolbar.save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg")))
-        # self.save_menu.triggered.connect(
-        #     lambda: self.toolbar.save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg")))
         self.save_menu.save_graph.triggered.connect(self.graph_window.save_graph)
         self.save_menu.save_raw_data.triggered.connect(self.graph_window.save_raw)
         self.save_menu.save_roi.triggered.connect(self.save_roi)
@@ -505,7 +508,8 @@ class MainWindow(QMainWindow):
         self.image_label.set_text(self.image_name)
         workspace_layout.addWidget(self.image_label, 0, 0)
 
-        self.picture_viewer = Viewer(self.set_slider_max)
+        self.picture_viewer = Viewer()
+        self.picture_viewer.add_pictures.connect(self.handle_add_pics)
         workspace_layout.addWidget(self.picture_viewer, 1, 0, 2, 2)
 
         self.slider = Slider()
@@ -542,9 +546,15 @@ class MainWindow(QMainWindow):
     def set_slider_max(self, val):
         self.slider.setMaximum(val)
         self.frame_label.set_text(str(self.slider.minimum()), " / ", str(self.slider.maximum()))
-    # Sorry fot this
+
+    @pyqtSlot(int)
+    def handle_add_pics(self, quantity_of_pics):
+        self.set_slider_max(quantity_of_pics)
+        # add name of first pic to name label
         self.images_names[1] = self.picture_viewer.image_paths[0][self.picture_viewer.image_paths[0].rfind("/") + 1:]
         self.image_label.set_text(self.images_names[1])
+
+        self.toolbar.tools_widget.setEnabled(True)
 
     @pyqtSlot(bool)
     def turn_draw_mode(self, checked):
