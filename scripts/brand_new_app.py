@@ -373,6 +373,7 @@ class GraphWindow(QMainWindow):
         self.stylesheet_red = '''
                 color: white;
                 background-color: #F03C3C;
+                border: 2px solid transparent;
         '''
         self.stylesheet_grey = '''
                 color: #6A6E77;
@@ -411,15 +412,15 @@ class GraphWindow(QMainWindow):
     def eventFilter(self, obj, event):
         if event.type() == QEvent.HoverEnter:
             if obj == self.save_plot_button:
-                self.save_plot_button.set_style("color: #F03C3C;background-color: white;border-width: 10px;\
-                                                border-color: #F03C3C;")
+                # небольшое движение интерфейса при наведении на кнопку из-за добавления рамки
+                self.save_plot_button.set_style("color: #F03C3C;background-color: white;border: 2px solid #F03C3C;")
                 return True
             if obj == self.save_raw_button:
                 self.save_raw_button.set_style("color: #EBEEF5;background-color: #6A6E77;")
                 return True
         elif event.type() == QEvent.HoverLeave:
             if obj == self.save_plot_button:
-                self.save_plot_button.set_style("color: white;background-color: #F03C3C;")
+                self.save_plot_button.set_style("color: white;background-color: #F03C3C;border: 2px solid transparent;")
                 return True
             if obj == self.save_raw_button:
                 self.save_raw_button.set_style("color: #6A6E77;background-color: #EBEEF5;")
