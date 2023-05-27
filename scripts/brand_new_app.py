@@ -223,7 +223,6 @@ class Scene(QGraphicsScene):
         text_item.setZValue(self.z_order)
         self.addItem(text_item)
 
-
         self.items_list.append((oval, text_item, (round(center.x()), round(center.y()), round(r))))
         self.z_order += 1
 
@@ -237,6 +236,7 @@ class Viewer(QGraphicsView):
         self.image_paths = []
         self.setAcceptDrops(True)
         self.zoom = 1
+        self.max_resolution = 2_000_000
         self.setFixedSize(QSize(500, 500))
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -245,14 +245,21 @@ class Viewer(QGraphicsView):
         self.setScene(self.scene)
 
         self.image = QGraphicsPixmapItem(QPixmap("../data/1.jpg"))
+        self.image_view_size = self.image.pixmap().size()
         self.scene.addItem(self.image)
 
+    # boundaries correct works with the same size pictures
     def wheelEvent(self, event: QWheelEvent) -> None:
         if event.angleDelta().y() > 0:
-            self.zoom += 0.1
+            if max(self.image_view_size.width(), self.image_view_size.height()) < self.max_resolution:
+                self.zoom += 0.1
+
         else:
-            self.zoom -= 0.1
+            if not(self.image_view_size.width() < self.geometry().size().width()
+                    and self.image_view_size.height() < self.geometry().size().height()):
+                self.zoom -= 0.1
         self.scale(self.zoom, self.zoom)
+        self.image_view_size *= self.zoom
         self.zoom = 1
 
     def show_image(self, value=0, pixmap=None):
@@ -264,6 +271,8 @@ class Viewer(QGraphicsView):
             self.scene.removeItem(self.image)
             self.image = QGraphicsPixmapItem(pixmap)
             self.scene.addItem(self.image)
+
+        # self.image_view_size = self.image.pixmap().size()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasImage:
