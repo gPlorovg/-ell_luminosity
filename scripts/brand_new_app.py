@@ -7,6 +7,7 @@ from PyQt5.QtCore import QSize, QMargins, Qt, QPointF, QEvent, pyqtSlot, pyqtSig
 import proceccing
 import csv
 import shutil
+import os
 
 
 class MyLabel(QWidget):
@@ -426,22 +427,24 @@ class GraphWindow(QMainWindow):
         return super().eventFilter(obj, event)
 
     def save_graph(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;Image Files (*.png)',
-                                                   options=options)
-        if file_name:
-            shutil.copy("../graphics/Example.png", file_name)
-            # QMessageBox.information(self, 'File Saved', 'File saved successfully!')
+        if os.path.isfile("../graphics/Example.png"):
+            options = QFileDialog.Options()
+            file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;Image Files (*.png)',
+                                                       options=options)
+            if file_name:
+                shutil.copy("../graphics/Example.png", file_name)
+                # QMessageBox.information(self, 'File Saved', 'File saved successfully!')
 
     def save_raw(self):
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;CSV Files (*.csv)',
-                                                   options=options)
-        if file_name:
-            with open(file_name, "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow([f"Region {i+1}" for i in range(len(self.data[0]))])
-                writer.writerows(self.data)
+        if self.data:
+            options = QFileDialog.Options()
+            file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;CSV Files (*.csv)',
+                                                       options=options)
+            if file_name:
+                with open(file_name, "w", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow([f"Region {i+1}" for i in range(len(self.data[0]))])
+                    writer.writerows(self.data)
 
 
 class SaveMenu(QMenu):
@@ -566,16 +569,17 @@ class MainWindow(QMainWindow):
             self.picture_viewer.setDragMode(QGraphicsView.ScrollHandDrag)
 
     def calculate(self):
-        self.roi = [proceccing.ROI(*el[2]) for el in self.picture_viewer.scene.items_list]
-        self.frame_data = []
+        if self.picture_viewer.scene.items_list:
+            self.roi = [proceccing.ROI(*el[2]) for el in self.picture_viewer.scene.items_list]
+            self.frame_data = []
 
-        for url in self.picture_viewer.image_paths:
-            self.frame_data.append([roi.measure(proceccing.open_image(url)) for roi in self.roi])
+            for url in self.picture_viewer.image_paths:
+                self.frame_data.append([roi.measure(proceccing.open_image(url)) for roi in self.roi])
 
-        self.graph_window.graph.setPixmap(QPixmap(proceccing.make_graph(self.frame_data, "Example")))
-        self.graph_window.data = self.frame_data
-        self.graph_window.image_label.set_text(self.images_names[1])
-        self.graph_window.show()
+            self.graph_window.graph.setPixmap(QPixmap(proceccing.make_graph(self.frame_data, "Example")))
+            self.graph_window.data = self.frame_data
+            self.graph_window.image_label.set_text(self.images_names[1])
+            self.graph_window.show()
         # frame_data
         #     roi1 roi2   roi3   roi4
         # fr1[0.0, 138.0, 130.0, 111.0]
@@ -584,15 +588,16 @@ class MainWindow(QMainWindow):
         # fr4[0.0, 74.0, 70.0, 59.0]
 
     def save_roi(self):
-        self.roi = [proceccing.ROI(*el[2]) for el in self.picture_viewer.scene.items_list]
-        options = QFileDialog.Options()
-        file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;CSV Files (*.csv)',
-                                                   options=options)
-        if file_name:
-            with open(file_name, "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow(["", "X", "Y", "R"])
-                writer.writerows([[f"Region {i+1}", *roi.get_info()] for i, roi in enumerate(self.roi)])
+        if self.picture_viewer.scene.items_list:
+            self.roi = [proceccing.ROI(*el[2]) for el in self.picture_viewer.scene.items_list]
+            options = QFileDialog.Options()
+            file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'All Files (*);;CSV Files (*.csv)',
+                                                       options=options)
+            if file_name:
+                with open(file_name, "w", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["", "X", "Y", "R"])
+                    writer.writerows([[f"Region {i+1}", *roi.get_info()] for i, roi in enumerate(self.roi)])
 
     def open_roi(self):
         file_dialog = QFileDialog()
@@ -617,6 +622,11 @@ class MainWindow(QMainWindow):
     def colorize_cur_frame(self):
         colorized_pixmap = proceccing.colorize(self.picture_viewer.image.pixmap(), "magma")
         self.picture_viewer.show_image(pixmap=colorized_pixmap)
+
+    def closeEvent(self, e) -> None:
+        if os.path.isfile("../graphics/Example.png"):
+            os.remove("../graphics/Example.png")
+
 
 if __name__ == '__main__':
     app = QApplication([])
