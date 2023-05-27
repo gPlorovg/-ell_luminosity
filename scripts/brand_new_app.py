@@ -223,6 +223,7 @@ class Scene(QGraphicsScene):
         text_item.setZValue(self.z_order)
         self.addItem(text_item)
 
+
         self.items_list.append((oval, text_item, (round(center.x()), round(center.y()), round(r))))
         self.z_order += 1
 
