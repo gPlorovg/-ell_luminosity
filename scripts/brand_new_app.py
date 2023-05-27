@@ -441,6 +441,8 @@ class GraphWindow(QMainWindow):
 
 
 class SaveMenu(QMenu):
+    leave = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.save_roi = QAction("Save regions of interest", self)
@@ -455,6 +457,8 @@ class SaveMenu(QMenu):
         self.addAction(self.save_graph)
         self.addAction(self.save_raw_data)
 
+    def leaveEvent(self, event) -> None:
+        self.leave.emit()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -481,8 +485,10 @@ class MainWindow(QMainWindow):
         #кнопочка зависает если выбрать меню увести стрелку и кликнуть вне кнопки сохранения.
         #меню закроется, кнопка останется подсвеченной
         self.save_menu = SaveMenu()
-        self.save_menu.triggered.connect(
+        self.save_menu.leave.connect(
             lambda: self.toolbar.save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg")))
+        # self.save_menu.triggered.connect(
+        #     lambda: self.toolbar.save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg")))
         self.save_menu.save_graph.triggered.connect(self.graph_window.save_graph)
         self.save_menu.save_raw_data.triggered.connect(self.graph_window.save_raw)
         self.save_menu.save_roi.triggered.connect(self.save_roi)
