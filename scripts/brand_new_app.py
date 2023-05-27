@@ -48,6 +48,7 @@ class MyLabel(QWidget):
 
 class Toolbar(QWidget):
     draw_mode = pyqtSignal(bool)
+
     def __init__(self, stylesheet):
         super().__init__()
         icon_size = QSize(32, 32)
@@ -477,7 +478,11 @@ class MainWindow(QMainWindow):
         self.toolbar.draw_mode.connect(self.turn_draw_mode)
         self.toolbar.graph_button.clicked.connect(self.calculate)
 
+        #кнопочка зависает если выбрать меню увести стрелку и кликнуть вне кнопки сохранения.
+        #меню закроется, кнопка останется подсвеченной
         self.save_menu = SaveMenu()
+        self.save_menu.triggered.connect(
+            lambda: self.toolbar.save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg")))
         self.save_menu.save_graph.triggered.connect(self.graph_window.save_graph)
         self.save_menu.save_raw_data.triggered.connect(self.graph_window.save_raw)
         self.save_menu.save_roi.triggered.connect(self.save_roi)
