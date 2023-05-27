@@ -220,6 +220,7 @@ class Scene(QGraphicsScene):
         text_item.setDefaultTextColor(QColor("#F03C3C"))
         text_item.setPos(center - QPointF(text_item.boundingRect().width() / 2,
                                           text_item.boundingRect().height() / 2))
+        text_item.setZValue(self.z_order)
         self.addItem(text_item)
 
         self.items_list.append((oval, text_item, (round(center.x()), round(center.y()), round(r))))
