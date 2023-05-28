@@ -34,7 +34,7 @@ def make_graph(data, name) -> str:
     ax.set_ylabel('Relative Fluorescence', fontsize=12)  # Set the y-axis label and font size
     ax.legend(fontsize=10)  # Set the legend font size
 
-    # Adjust the plot layout
+    # Adjust the plot main_layout
     fig.tight_layout()
 
     # Show the plot
