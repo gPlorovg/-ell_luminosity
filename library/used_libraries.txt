@@ -1,4 +1,0 @@
-matplotlib                3.5.1            py39haa95532_1 
-numpy                     1.21.5           py39h7a0a035_1  
-pillow                    9.0.1            py39hdc2b20a_0 
-pyqt                      5.9.2            py39hd77b12b_6 

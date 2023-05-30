@@ -64,7 +64,7 @@ class GraphWindow(QMainWindow, Observer):
         self.buttons_stylesheets["plot_basic_dark"] = \
             "color: #1E1E1E;background-color: #A2D01E;border: 2px solid transparent;"
         self.buttons_stylesheets["plot_chosen_light"] = \
-            "color: #F03C3C;background-color: white;border: 2px solid #A2D01E;"
+            "color: #F03C3C;background-color: white;border: 2px solid #F03C3C;"
         self.buttons_stylesheets["plot_chosen_dark"] = \
             "color: #A2D01E;background-color: #1E1E1E;border: 2px solid #A2D01E;"
 

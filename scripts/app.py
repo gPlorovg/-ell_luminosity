@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, \
     QHBoxLayout, QWidget, QGraphicsView, QGridLayout, QFileDialog, QMenu, QAction
-from PyQt5.QtGui import QIcon, QPixmap, QColor, QPen
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtCore import QMargins, pyqtSlot, pyqtSignal
 import csv
 import os
@@ -158,6 +158,11 @@ class MainWindow(QMainWindow, Observable, Observer):
             # calculate measure fluorescence in each roi for each image
             for url in self.picture_viewer.image_paths:
                 self.frame_data.append([roi.measure(proceccing.open_image(url)) for roi in self.roi])
+
+            # for normalize data using first 5 frames
+            f0 = dict()
+            for i, col in enumerate(zip(*self.frame_data[:5])):
+                    f0[i] = sum(col) / 5
 
             self.graph_window.graph.setPixmap(QPixmap(proceccing.make_graph(self.frame_data, "Example")))
             self.graph_window.data = self.frame_data

@@ -13,7 +13,7 @@ class ROI:
     def measure(self, img: np.ndarray) -> float:
         xs, ys = np.indices(img.shape)
         mask = (xs - self.x) ** 2 + (ys - self.y) ** 2 <= self.r ** 2
-        return np.median(img[mask])
+        return np.mean(img[mask])
 
     def get_info(self) -> list:
         return [self.x, self.y, self.r]
@@ -21,7 +21,6 @@ class ROI:
 
 def open_image(url):
     return np.array(Image.open(url).convert('L'))
-
 
 def make_graph(data, name) -> str:
     fig, ax = plt.subplots(figsize=(5, 5))
