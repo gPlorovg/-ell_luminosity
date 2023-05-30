@@ -1,12 +1,12 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, \
     QHBoxLayout, QWidget, QGraphicsView, QGridLayout, QFileDialog, QMenu, QAction
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QColor, QPen
 from PyQt5.QtCore import QMargins, pyqtSlot, pyqtSignal
 import csv
 import os
 import json
 from library import proceccing
-from library.Observe import Observable
+from library.Observe import Observable, Observer
 from library.Toolbar import Toolbar
 from library.Label import MyLabel
 from library.PictureViewer import Viewer
@@ -15,7 +15,7 @@ from library.GraghWindow import GraphWindow
 from library.SettingsWindow import SettingsWindow
 
 
-class SaveMenu(QMenu):
+class SaveMenu(QMenu, Observer):
     leave = pyqtSignal()
 
     def __init__(self):
@@ -36,7 +36,7 @@ class SaveMenu(QMenu):
         self.leave.emit()
 
 
-class MainWindow(QMainWindow, Observable):
+class MainWindow(QMainWindow, Observable, Observer):
     def __init__(self):
         super().__init__()
         self.curr_image_name = "~image name~"
@@ -45,10 +45,8 @@ class MainWindow(QMainWindow, Observable):
         self.roi = list()
         self.frame_data = list()
 
-        with open("settings/style.qss", "r") as f:
-            self.stylesheet = f.read()
-
         self.init_ui()
+        self.change_mode(self.settings_window.settings["dark_mode"])
 
     def init_ui(self):
         self.attach(self)
@@ -57,11 +55,11 @@ class MainWindow(QMainWindow, Observable):
 
         self.settings_window = SettingsWindow()
         self.attach(self.settings_window)
-        self.settings_window.dark_mode.connect(self.notify)
+        self.settings_window.is_dark_mode.connect(self.change_mode)
 
         toolbar_layout = QVBoxLayout()
         toolbar_layout.setSpacing(10)
-        self.toolbar = Toolbar(self.stylesheet)
+        self.toolbar = Toolbar()
         self.attach(self.toolbar)
         toolbar_layout.addWidget(self.toolbar)
         self.toolbar.draw_mode.connect(self.turn_draw_mode)
@@ -72,7 +70,7 @@ class MainWindow(QMainWindow, Observable):
         self.save_menu = SaveMenu()
         self.attach(self.save_menu)
         self.save_menu.leave.connect(
-            lambda: self.toolbar.save_button.setIcon(QIcon("../images/icons/light_theme/basic/save.svg")))
+            lambda: self.toolbar.save_button.setIcon(QIcon(f"../images/icons/{self.toolbar.mode_path}/basic/save.svg")))
 
         self.save_menu.save_graph.triggered.connect(self.graph_window.save_graph)
         self.save_menu.save_raw_data.triggered.connect(self.graph_window.save_raw)
@@ -110,10 +108,9 @@ class MainWindow(QMainWindow, Observable):
         main_layout.addLayout(toolbar_layout)
         main_layout.addLayout(workspace_layout)
 
-        main_widget = QWidget(self)
-        main_widget.setLayout(main_layout)
-        main_widget.setStyleSheet("background-color: white;")
-        self.setCentralWidget(main_widget)
+        self.main_widget = QWidget(self)
+        self.main_widget.setLayout(main_layout)
+        self.setCentralWidget(self.main_widget)
 
     def change_image(self, value):
         # change value of frame counter
@@ -221,9 +218,24 @@ class MainWindow(QMainWindow, Observable):
                                                self.settings_window.settings["cmap"])
         self.picture_viewer.show_image(pixmap=colorized_pixmap)
 
-    # change theme mode
-    # def update_(self, dark_mode):
-    #     self.setStyleSheet()
+    @pyqtSlot(bool)
+    def change_mode(self, dark_mode):
+        self.notify(dark_mode)
+        self.toolbar.mode_path = "dark_theme" if self.dark_mode else "light_theme"
+        self.toolbar.update_buttons()
+
+        self.settings_window.mode_path = "dark" if self.dark_mode else "light"
+        self.settings_window.update_buttons()
+
+        self.picture_viewer.scene.dark_mode = self.dark_mode
+        self.picture_viewer.scene.color = "#A2D01E" if self.dark_mode else "#F03C3C"
+        self.picture_viewer.scene.pen = self.picture_viewer.scene.pen_dark if self.dark_mode\
+            else self.picture_viewer.scene.pen_light
+        self.picture_viewer.scene.repaint()
+
+        self.graph_window.image_label.update_(self.dark_mode)
+        self.graph_window.mode_path = "dark" if self.dark_mode else "light"
+        self.graph_window.update_buttons()
 
     # executes when program closing
     def closeEvent(self, e) -> None:

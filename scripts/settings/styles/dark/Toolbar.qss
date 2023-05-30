@@ -1,0 +1,13 @@
+QPushButton {
+    background-color: transparent;
+    padding: 22px;
+}
+#tools_widget {
+    background-color: #282828;
+    border-radius: 10px;
+}
+#setting_button {
+    background-color: #282828;
+    border-radius: 10px;
+    padding: 14px 22px 14px 22px;
+}

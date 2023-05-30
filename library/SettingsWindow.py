@@ -3,6 +3,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import QSize, Qt, QEvent, pyqtSignal
 
 import json
+from library.Observe import Observer
 
 
 class ThemeModeButton(QPushButton):
@@ -32,8 +33,8 @@ class CmapList(QComboBox):
         self.addItem(QIcon("../images/cmaps/cividis.png"), "cividis")
 
 
-class SettingsWindow(QMainWindow):
-    dark_mode = pyqtSignal(bool)
+class SettingsWindow(QMainWindow, Observer):
+    is_dark_mode = pyqtSignal(bool)
 
     def __init__(self):
         super().__init__()
@@ -42,10 +43,13 @@ class SettingsWindow(QMainWindow):
         self.layout = QHBoxLayout()
         self.settings = dict()
         self.tmp_settings = dict()
+        self.buttons_stylesheets = dict()
+        self.init_buttons_stylesheets()
 
         with open("settings/config.json") as f:
             self.settings = json.load(f)
 
+        self.mode_path = "dark" if self.settings["dark_mode"] else "light"
         self.tmp_settings = self.settings.copy()
 
         self.theme_mode_button = ThemeModeButton(self.settings["dark_mode"])
@@ -82,72 +86,6 @@ class SettingsWindow(QMainWindow):
 
         self.setObjectName("settings_window")
 
-        self.setStyleSheet('''
-            #theme_mode_button {
-                background-color: transparent;
-                border: 0;
-            }
-            #cmap_list {
-                border: 0;
-                font-family: 'Inter';
-                font-style: normal;
-                font-weight: 700;
-                font-size: 16px;
-                color: #6A6E77;
-            }
-            #cmap_list::drop-down{
-                border: 0;
-                width: 13px;
-            }
-            #cmap_list::down-arrow{
-                image: url("../images/icons/cmap_list_arrow.png");
-                width: 12px;
-                height: 12px;
-            }
-            QComboBox::down-arrow:on { /* shift the arrow when popup is open */
-                top: 1px;
-                left: 1px;
-            }
-            #cmap_list QListView {
-                font-family: 'Inter';
-                font-style: normal;
-                font-weight: 700;
-                font-size: 14px;
-                color: #6A6E77;
-                outline: 0;
-            }
-
-            #apply_b {
-                color: white;
-                background-color: #F03C3C;
-                border-radius: 10px;
-                padding: 8px 20px 8px 20px;
-
-                font-family: 'Inter';
-                font-style: normal;
-                font-weight: 700;
-                font-size: 14px;
-                line-height: 12px;
-            }
-
-            #cancel_b {
-                color: #6A6E77;
-                background-color: #EBEEF5;
-                border-radius: 10px;
-                padding: 8px 20px 8px 20px;
-
-                font-family: 'Inter';
-                font-style: normal;
-                font-weight: 700;
-                font-size: 14px;
-                line-height: 12px;
-            }
-
-            #settings_window {
-                background-color: white;
-                padding: 16px;
-            }
-        ''')
         self.widget = QWidget()
         self.widget.setLayout(self.main_layout)
         self.setCentralWidget(self.widget)
@@ -158,7 +96,7 @@ class SettingsWindow(QMainWindow):
         else:
             self.theme_mode_button.setIcon(QIcon("../images/theme_mode_button_icons/light_mode.png"))
         self.tmp_settings["dark_mode"] = dark_mode
-        self.dark_mode.emint(dark_mode)
+        self.is_dark_mode.emit(dark_mode)
 
     def change_cmap(self, cmap):
         self.cmap.setCurrentText(cmap)
@@ -173,20 +111,43 @@ class SettingsWindow(QMainWindow):
         self.settings = self.tmp_settings.copy()
         self.close()
 
+    def init_buttons_stylesheets(self):
+        self.buttons_stylesheets["apply_basic_light"] = \
+            "color: white;background-color: #F03C3C;border: 2px solid transparent;"
+        self.buttons_stylesheets["apply_basic_dark"] = \
+            "color: #1E1E1E;background-color: #A2D01E;border: 2px solid transparent;"
+        self.buttons_stylesheets["apply_chosen_light"] = \
+            "color: #F03C3C;background-color: white;border: 2px solid #F03C3C;"
+        self.buttons_stylesheets["apply_chosen_dark"] = \
+            "color: #A2D01E;background-color: #1E1E1E;border: 2px solid #A2D01E;"
+
+        self.buttons_stylesheets["cancel_basic_light"] = \
+            "color: #6A6E77;background-color: #EBEEF5;"
+        self.buttons_stylesheets["cancel_basic_dark"] = \
+            "color: #F0F0F0;background-color: #282828;"
+        self.buttons_stylesheets["cancel_chosen_light"] = \
+            "color: #EBEEF5;background-color: #6A6E77;"
+        self.buttons_stylesheets["cancel_chosen_dark"] = \
+            "color: #282828;background-color: #F0F0F0;"
+
+    def update_buttons(self):
+        self.apply_b.setStyleSheet(self.buttons_stylesheets[f"apply_basic_{self.mode_path}"])
+        self.cancel_b.setStyleSheet(self.buttons_stylesheets[f"cancel_basic_{self.mode_path}"])
+
     # handel hovering apply and close buttons
     def eventFilter(self, obj, event):
         if event.type() == QEvent.HoverEnter:
             if obj == self.apply_b:
-                self.apply_b.setStyleSheet("color: #F03C3C;background-color: white;border: 2px solid #F03C3C;")
+                self.apply_b.setStyleSheet(self.buttons_stylesheets[f"apply_chosen_{self.mode_path}"])
                 return True
             if obj == self.cancel_b:
-                self.cancel_b.setStyleSheet("color: #EBEEF5;background-color: #6A6E77;")
+                self.cancel_b.setStyleSheet(self.buttons_stylesheets[f"cancel_chosen_{self.mode_path}"])
                 return True
         elif event.type() == QEvent.HoverLeave:
             if obj == self.apply_b:
-                self.apply_b.setStyleSheet("color: white;background-color: #F03C3C;border: 2px solid transparent;")
+                self.apply_b.setStyleSheet(self.buttons_stylesheets[f"apply_basic_{self.mode_path}"])
                 return True
             if obj == self.cancel_b:
-                self.cancel_b.setStyleSheet("color: #6A6E77;background-color: #EBEEF5;")
+                self.cancel_b.setStyleSheet(self.buttons_stylesheets[f"cancel_basic_{self.mode_path}"])
                 return True
         return super().eventFilter(obj, event)

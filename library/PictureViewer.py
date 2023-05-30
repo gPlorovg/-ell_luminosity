@@ -1,16 +1,26 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QGraphicsEllipseItem, QGraphicsTextItem
 from PyQt5.QtGui import QPixmap, QDragEnterEvent, QDragMoveEvent, QWheelEvent, QColor, QPen, QFont
 from PyQt5.QtCore import QSize, Qt, QPointF, pyqtSignal
+from library.Observe import Observer
 
 
 class Scene(QGraphicsScene):
-    def __init__(self):
+    def __init__(self, dark_mode):
         super().__init__()
-        self.pen = QPen(QColor("#F03C3C"), 4)
-        self.pen.setStyle(Qt.CustomDashLine)
-        self.pen.setDashPattern([3, 2])
+        self.dark_mode = dark_mode
+        self.color = "#A2D01E" if self.dark_mode else "#F03C3C"
+        self.pen_light = QPen(QColor("#F03C3C"), 4)
+        self.pen_light.setStyle(Qt.CustomDashLine)
+        self.pen_light.setDashPattern([3, 2])
+
+        self.pen_dark = QPen(QColor("#A2D01E"), 4)
+        self.pen_dark.setStyle(Qt.CustomDashLine)
+        self.pen_dark.setDashPattern([3, 2])
+
+        self.pen = self.pen_dark if self.dark_mode else self.pen_light
+
         self.z_order = 1
-        self.items_list = []
+        self.items_list = list()
         self._start = None
         self._current_oval = None
         self.draw_mode = False
@@ -32,7 +42,7 @@ class Scene(QGraphicsScene):
 
     def mouseMoveEvent(self, event):
         if self.draw_mode:
-            if event.button == Qt.LeftButton:
+            if event.buttons() & Qt.LeftButton:
                 x, y, r = self.__prepare_for_oval(event)
                 self._current_oval = QGraphicsEllipseItem(x, y, r, r)
                 self._current_oval.setPen(self.pen)
@@ -64,7 +74,7 @@ class Scene(QGraphicsScene):
         center = oval.rect().center()
         text_item = QGraphicsTextItem(str(self.z_order))
         text_item.setFont(QFont("Inter", 10))
-        text_item.setDefaultTextColor(QColor("#F03C3C"))
+        text_item.setDefaultTextColor(QColor(self.color))
         text_item.setPos(center - QPointF(text_item.boundingRect().width() / 2,
                                           text_item.boundingRect().height() / 2))
         text_item.setZValue(self.z_order)
@@ -73,8 +83,13 @@ class Scene(QGraphicsScene):
         self.items_list.append((oval, text_item, (round(center.x()), round(center.y()), round(r))))
         self.z_order += 1
 
+    def repaint(self):
+        for i in self.items_list:
+            i[0].setPen(self.pen)
+            i[1].setDefaultTextColor(QColor(self.color))
 
-class Viewer(QGraphicsView):
+
+class Viewer(QGraphicsView, Observer):
     add_pictures = pyqtSignal(int)
 
     def __init__(self):
@@ -89,7 +104,8 @@ class Viewer(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.scene = Scene()
+        self.scene = Scene(self.dark_mode)
+        self.scene.setObjectName("scene")
         self.setScene(self.scene)
 
         self.image = QGraphicsPixmapItem(QPixmap("../images/default_image.png"))
