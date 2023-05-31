@@ -13,6 +13,7 @@ from library.PictureViewer import Viewer
 from library.Slider import Slider
 from library.GraghWindow import GraphWindow
 from library.SettingsWindow import SettingsWindow
+from library.ProgressBar import ProgressBarWindow
 
 
 class SaveMenu(QMenu, Observer):
@@ -44,6 +45,7 @@ class MainWindow(QMainWindow, Observable, Observer):
         self.current_frame = 0
         self.roi = list()
         self.frame_data = list()
+        self.f0 = dict() # normalize coefficient for each roi
 
         self.init_ui()
         self.change_mode(self.settings_window.settings["dark_mode"])
@@ -56,6 +58,12 @@ class MainWindow(QMainWindow, Observable, Observer):
         self.settings_window = SettingsWindow()
         self.attach(self.settings_window)
         self.settings_window.is_dark_mode.connect(self.change_mode)
+
+        self.progress_bar = ProgressBarWindow()
+        self.progress_bar.setFixedWidth(self.width() - 100)
+        self.statusBar().addWidget(self.progress_bar)
+        self.statusBar().hide()
+        self.attach(self.progress_bar)
 
         toolbar_layout = QVBoxLayout()
         toolbar_layout.setSpacing(10)
@@ -152,19 +160,23 @@ class MainWindow(QMainWindow, Observable, Observer):
     def calculate(self):
         # if at least one circle(roi) in scene exists
         if self.picture_viewer.scene.items_list:
+            self.statusBar().show()
             # calculate all roi in scene
             self.roi = [proceccing.ROI(*el[2]) for el in self.picture_viewer.scene.items_list]
-            self.frame_data = []
+            self.frame_data = list()
             # calculate measure fluorescence in each roi for each image
-            for url in self.picture_viewer.image_paths:
+            for i, url in enumerate(self.picture_viewer.image_paths):
                 self.frame_data.append([roi.measure(proceccing.open_image(url)) for roi in self.roi])
-
+                if i % (len(self.picture_viewer.image_paths) // 30) == 0:
+                    self.progress_bar.setValue(self.progress_bar.value() + 1)
             # for normalize data using first 5 frames
-            f0 = dict()
             for i, col in enumerate(zip(*self.frame_data[:5])):
-                    f0[i] = sum(col) / 5
+                self.f0[i] = sum(col) / 5
 
-            self.graph_window.graph.setPixmap(QPixmap(proceccing.make_graph(self.frame_data, "Example")))
+            self.progress_bar.reset()
+            self.statusBar().hide()
+
+            self.graph_window.graph.setPixmap(QPixmap(proceccing.make_graph(self.frame_data, self.f0)))
             self.graph_window.data = self.frame_data
             # set first image name as graph name label
             self.graph_window.image_label.set_text(self.image_names[1])

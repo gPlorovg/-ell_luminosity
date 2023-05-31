@@ -22,11 +22,16 @@ class ROI:
 def open_image(url):
     return np.array(Image.open(url).convert('L'))
 
-def make_graph(data, name) -> str:
-    fig, ax = plt.subplots(figsize=(5, 5))
 
-    for i, col in enumerate(zip(*data)):
-        ax.plot(col, label=f'Region {i + 1}', linewidth=2)
+def make_graph(data, f0, name="Example") -> str:
+    fig, ax = plt.subplots(figsize=(5, 5))
+    data = np.array(data)
+
+    for i in range(len(data[0])):
+        data[:, i] = data[:, i] / f0[i]
+
+    for i in range(len(data[0])):
+        ax.plot(data[:, i], label=f'Region {i + 1}', linewidth=2)
 
     # Customize the appearance of the plot
     ax.set_xlabel('Frames', fontsize=12)  # Set the x-axis label and font size
