@@ -5,13 +5,14 @@ from PyQt5.QtCore import QMargins, pyqtSlot, pyqtSignal
 import csv
 import os
 import json
+
 from library import proceccing
 from library.Observe import Observable, Observer
 from library.Toolbar import Toolbar
 from library.Label import MyLabel
 from library.PictureViewer import Viewer
 from library.Slider import Slider
-from library.GraghWindow import GraphWindow
+from library.GraphWindow import GraphWindow
 from library.SettingsWindow import SettingsWindow
 from library.ProgressBar import ProgressBarWindow
 

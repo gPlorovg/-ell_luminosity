@@ -19,7 +19,7 @@ class ROI:
         return [self.x, self.y, self.r]
 
 
-def open_image(url):
+def open_image(url) -> np.ndarray:
     return np.array(Image.open(url).convert('L'))
 
 
@@ -64,20 +64,3 @@ def colorize(pixmap, cmap) -> QPixmap:
     qimage = QImage(image_data, colorized_img.size[0], colorized_img.size[1], QImage.Format_RGBA8888)
 
     return QPixmap.fromImage(qimage)
-
-# image = np.random.randint(0, 256, size=144).reshape(-1, 12)
-# roi = ROI(5, 5, 3)
-#
-#
-# def make_graph():
-#     fig, ax = plt.subplots()
-#
-#     ax.plot((1, 2), (1, 2))
-#     ax.plot((2, 1), (1, 2))
-#
-#     ax.set_xlabel('$ Time, min $')
-#     ax.set_ylabel('$ F / F_0 $')
-#     plt.show()
-#
-#
-# make_graph()
