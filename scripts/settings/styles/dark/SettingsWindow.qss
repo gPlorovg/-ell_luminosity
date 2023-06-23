@@ -16,7 +16,7 @@
     width: 13px;
 }
 #cmap_list::down-arrow{
-    image: url("../images/icons/cmap_list_arrow_dark.png");
+    image: url("images/icons/cmap_list_arrow_dark.png");
     width: 12px;
     height: 12px;
 }

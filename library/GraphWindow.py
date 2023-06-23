@@ -13,7 +13,7 @@ from library.Observe import Observer
 class Graph(QLabel):
     def __init__(self):
         super().__init__()
-        self.setPixmap(QPixmap("../images/cat.jpg"))
+        self.setPixmap(QPixmap("images/cat.jpg"))
         self.setFixedSize(QSize(500, 500))
         self.setAlignment(Qt.AlignCenter)
 
@@ -99,11 +99,11 @@ class GraphWindow(QMainWindow, Observer):
         return super().eventFilter(obj, event)
 
     def save_graph(self):
-        if os.path.isfile("../graphics/Example.png"):
+        if os.path.isfile("graphics/Example.png"):
             options = QFileDialog.Options()
             file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'Image Files (*.png)', options=options)
             if file_name:
-                shutil.copy("../graphics/Example.png", file_name)
+                shutil.copy("graphics/Example.png", file_name)
 
     def save_raw(self):
         if self.data:

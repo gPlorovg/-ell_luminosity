@@ -108,7 +108,7 @@ class Viewer(QGraphicsView, Observer):
         self.scene.setObjectName("scene")
         self.setScene(self.scene)
 
-        self.image = QGraphicsPixmapItem(QPixmap("../images/default_image.png"))
+        self.image = QGraphicsPixmapItem(QPixmap("images/default_image.png"))
         self.image_view_size = self.image.pixmap().size()
         self.scene.addItem(self.image)
 

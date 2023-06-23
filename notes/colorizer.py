@@ -17,5 +17,5 @@ def colorize(img_url, cmap):
 cmaps = ['viridis', 'plasma', 'inferno', 'magma', 'cividis']
 
 for color in cmaps:
-    colorize('../data/4.jpg', color)
+    colorize('data/4.jpg', color)
 

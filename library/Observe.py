@@ -16,10 +16,10 @@ class Observer:
 
     def update_(self, dark_mode):
         if dark_mode:
-            with open(f"../scripts/settings/styles/dark/{self.__class__.__name__}.qss") as f:
+            with open(f"scripts/settings/styles/dark/{self.__class__.__name__}.qss") as f:
                 stylesheet = f.read()
         else:
-            with open(f"../scripts/settings/styles/light/{self.__class__.__name__}.qss") as f:
+            with open(f"scripts/settings/styles/light/{self.__class__.__name__}.qss") as f:
                 stylesheet = f.read()
 
         self.dark_mode = dark_mode

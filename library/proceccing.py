@@ -42,7 +42,7 @@ def make_graph(data, f0, name="Example") -> str:
     fig.tight_layout()
 
     # Show the plot
-    url = f"../graphics/{name}.png"
+    url = f"graphics/{name}.png"
     plt.savefig(url, dpi=100)
     return url
 

@@ -15,9 +15,9 @@ class ThemeModeButton(QPushButton):
         self.setIconSize(QSize(210, 45))
 
         if dark_mode:
-            self.setIcon(QIcon("../images/theme_mode_button_icons/dark_mode.png"))
+            self.setIcon(QIcon("images/theme_mode_button_icons/dark_mode.png"))
         else:
-            self.setIcon(QIcon("../images/theme_mode_button_icons/light_mode.png"))
+            self.setIcon(QIcon("images/theme_mode_button_icons/light_mode.png"))
 
 
 class CmapList(QComboBox):
@@ -26,11 +26,11 @@ class CmapList(QComboBox):
         self.setFixedSize(468, 40)
         self.setIconSize(QSize(380, 40))
 
-        self.addItem(QIcon("../images/cmaps/magma.png"), "magma")
-        self.addItem(QIcon("../images/cmaps/viridis.png"), "viridis")
-        self.addItem(QIcon("../images/cmaps/plasma.png"), "plasma")
-        self.addItem(QIcon("../images/cmaps/inferno.png"), "inferno")
-        self.addItem(QIcon("../images/cmaps/cividis.png"), "cividis")
+        self.addItem(QIcon("images/cmaps/magma.png"), "magma")
+        self.addItem(QIcon("images/cmaps/viridis.png"), "viridis")
+        self.addItem(QIcon("images/cmaps/plasma.png"), "plasma")
+        self.addItem(QIcon("images/cmaps/inferno.png"), "inferno")
+        self.addItem(QIcon("images/cmaps/cividis.png"), "cividis")
 
 
 class SettingsWindow(QMainWindow, Observer):
@@ -46,7 +46,7 @@ class SettingsWindow(QMainWindow, Observer):
         self.buttons_stylesheets = dict()
         self.init_buttons_stylesheets()
 
-        with open("settings/config.json") as f:
+        with open("scripts/settings/config.json") as f:
             self.settings = json.load(f)
 
         self.mode_path = "dark" if self.settings["dark_mode"] else "light"
@@ -92,9 +92,9 @@ class SettingsWindow(QMainWindow, Observer):
 
     def change_mode(self, dark_mode):
         if dark_mode:
-            self.theme_mode_button.setIcon(QIcon("../images/theme_mode_button_icons/dark_mode.png"))
+            self.theme_mode_button.setIcon(QIcon("images/theme_mode_button_icons/dark_mode.png"))
         else:
-            self.theme_mode_button.setIcon(QIcon("../images/theme_mode_button_icons/light_mode.png"))
+            self.theme_mode_button.setIcon(QIcon("images/theme_mode_button_icons/light_mode.png"))
         self.tmp_settings["dark_mode"] = dark_mode
         self.is_dark_mode.emit(dark_mode)
 

@@ -6,6 +6,9 @@ import csv
 import os
 import json
 
+from sys import path
+path.extend(['C:\\work'])
+
 from library import proceccing
 from library.Observe import Observable, Observer
 from library.Toolbar import Toolbar
@@ -79,7 +82,7 @@ class MainWindow(QMainWindow, Observable, Observer):
         self.save_menu = SaveMenu()
         self.attach(self.save_menu)
         self.save_menu.leave.connect(
-            lambda: self.toolbar.save_button.setIcon(QIcon(f"../images/icons/{self.toolbar.mode_path}/basic/save.svg")))
+            lambda: self.toolbar.save_button.setIcon(QIcon(f"images/icons/{self.toolbar.mode_path}/basic/save.svg")))
 
         self.save_menu.save_graph.triggered.connect(self.graph_window.save_graph)
         self.save_menu.save_raw_data.triggered.connect(self.graph_window.save_raw)
@@ -258,10 +261,10 @@ class MainWindow(QMainWindow, Observable, Observer):
     # executes when program closing
     def closeEvent(self, e) -> None:
         # remove Example file - temporary file that contains last calculated graph
-        if os.path.isfile("../graphics/Example.png"):
-            os.remove("../graphics/Example.png")
+        if os.path.isfile("graphics/Example.png"):
+            os.remove("graphics/Example.png")
         # saving settings
-        with open("settings/config.json", "w") as f:
+        with open("scripts/settings/config.json", "w") as f:
             json.dump(self.settings_window.settings, f)
 
 
